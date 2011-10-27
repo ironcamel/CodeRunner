@@ -1,0 +1,38 @@
+appname: 'CodeRunner'
+layout: 'main'
+charset: 'UTF-8'
+serializer: 'JSON'
+session: 'YAML'
+
+template: 'template_toolkit'
+engines:
+  template_toolkit:
+    encoding:  'utf8'
+    start_tag: '[%'
+    end_tag:   '%]'
+
+queue: '/queue/coderunner'
+plugins:
+  Stomp:
+    default:
+      hostname: 'localhost'
+      port: 61613
+
+problems:
+  penney:
+    title: 'Penney Game'
+    input: |
+      4
+      1
+      HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+      2
+      TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+      3
+      HHTTTHHTTTHTHHTHHTTHTTTHHHTHTTHTTHTTTHTH
+      4
+      HTHTHHHTHHHTHTHHHHTTTHTTTTTHHTTTTHTHHHHT
+    output: |
+      1 0 0 0 0 0 0 0 38
+      2 38 0 0 0 0 0 0 0
+      3 4 7 6 4 7 4 5 1
+      4 6 3 4 5 3 6 5 6
