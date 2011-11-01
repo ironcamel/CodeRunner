@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
+use v5.10;
 use JSON qw(from_json to_json);
 use File::Temp;
 use FindBin qw($RealBin);
@@ -33,19 +34,20 @@ while (1) {
         my $problem = $data->{problem};
         my $tmp = File::Temp->new();
         print $tmp $data->{code};
-        print "going to run code ...\n";
+        say "going to run code ...";
         my $input = $problem->{input};
         run [ '/usr/local/bin/perl', "$tmp" ], \$input, \my $out;
-        #print "output: $out\n";
         my $status = $out eq $problem->{output} ? 1 : 0;
+        my $body = to_json({
+            status => $status,
+            reason => "I dont know",
+            run_id => $data->{run_id},
+        });
+        say "result: $body";
         $agent->post($data->{cb_url}, content_type => 'application/json',
-            Content => to_json({
-              status => $status,
-              reason => "I dont know",
-            })
-        );
+            Content => $body);
     } catch {
-        print "failed: $_\n";
+        say "failed: $_";
     };
     $stomp->ack({ frame => $frame });
 }

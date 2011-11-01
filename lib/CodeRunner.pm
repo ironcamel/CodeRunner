@@ -2,9 +2,8 @@ package CodeRunner;
 use v5.10;
 
 use Dancer ':syntax';
-#use Dancer::Plugin::Ajax;
+use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::Stomp;
-use Dancer::Plugin::WebSocket;
 
 get '/' => sub {
     template 'index';
@@ -14,8 +13,10 @@ post '/' => sub {
     my $file = upload 'code_file';
     #my $problem = param 'problem';
     my $problem = 'penney';
+    my $run_id = session->id;
+    cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
-        id       => session->id,
+        run_id   => $run_id,
         code     => $file->content,
         filename => $file->basename,
         language => param('language') || guess_lang($file->basename),
@@ -28,17 +29,19 @@ post '/' => sub {
     });
     template index => {
         is_running => 1,
-        session_id => session->id,
+        run_id => $run_id,
     };
 };
 
+get '/status/:run_id' => sub {
+    return from_json cache_get param 'run_id';
+};
+
+#get '/config' => sub { return to_dumper config };
+
 post '/cb' => sub {
-    my $status = param 'status';
-    my $reason = param 'reason';
-    ws_send to_json({
-        status => $status,
-        reason => $reason,
-    });
+    my $run_id = param 'run_id';
+    cache_set $run_id => request->body;
     return '';
 };
 

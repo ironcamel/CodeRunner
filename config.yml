@@ -17,6 +17,10 @@ plugins:
     default:
       hostname: 'localhost'
       port: 61613
+  'Cache::CHI':
+    driver: 'FastMmap'
+    root_dir: './cache'
+    cache_size: '1m'
 
 problems:
   penney:

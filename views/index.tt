@@ -50,25 +50,32 @@ $('#hide_btn').click(function() {
     $('#code_form').hide();
 })
 
-var ws_path = "ws://50.56.117.148:5000/_hippie/ws";
-var socket = new WebSocket(ws_path);
-socket.onopen = function() {
-    console.log('ws connected');
-    //document.getElementById('conn-status').innerHTML = 'Connected';
-};
-socket.onmessage = function(e) {
-    console.log(e.data);
-    var data = JSON.parse(e.data);
-    if (data.msg) {
-        data = JSON.parse(data.msg);
+[% IF is_running %]
+var poll_count = 0;
+var run_id = '[% run_id %]';
+var t_id = window.setInterval(function() {
+    $.get('[% request.uri_base %]/status/[% run_id %]', function(data) {
+        if (++poll_count > 10) {
+            window.clearInterval(t_id);
+            $('.page-header h1 small').html('TOOK TOO LONG');
+            return;
+        }
+        console.log(data);
+        if (data == null || data.status == null)
+            return;
+        if (data.status == -1) // Still running
+            return;
         if (data.status == 1) {
             $('.page-header h1 small').html('SUCCESS');
+            window.clearInterval(t_id);
         } else {
-            console.log(data);
             $('.page-header h1 small').html('FAILED');
+            window.clearInterval(t_id);
         }
-    }
-};
+    });
+}, 1000);
+[% END %]
+
 </script>
 
     <p>
