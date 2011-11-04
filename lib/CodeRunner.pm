@@ -37,6 +37,7 @@ post '/problems/:problem' => sub {
         language => param('language') || guess_lang($file->basename),
         problem  => $problem,
         cb_url   => uri_for('/cb')->as_string,
+        remote   => request->remote_address,
     }, { utf8 => 1 });
     stomp->send({
         destination => config->{queue},
@@ -71,6 +72,7 @@ sub guess_lang {
     given ($filename) {
         when (/\.java$/) { return 'java' }
         when (/\.pl$/  ) { return 'perl' }
+        when (/\.py$/  ) { return 'python' }
     }
     return 'c++';
 }
