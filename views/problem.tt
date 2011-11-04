@@ -18,8 +18,8 @@
     <button id="solve_btn" type="button" class="btn">Solve</button>
     </p>
 
-    <form id="code_form" class="form-stacked" action="[% request.uri_base %]/"
-          method="post" enctype="multipart/form-data" style="display:none">
+    <form id="code_form" class="form-stacked" action="" method="post"
+          enctype="multipart/form-data" style="display:none">
       <div class="clearfix">
 
         <label for="file_input">Submit Code</label>

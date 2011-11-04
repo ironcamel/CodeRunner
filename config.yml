@@ -10,6 +10,9 @@ engines:
     encoding:  'utf8'
     start_tag: '[%'
     end_tag:   '%]'
+  JSON:
+    utf8: 1
+    pretty: 1
 
 queue: '/queue/coderunner'
 plugins:
@@ -21,22 +24,3 @@ plugins:
     driver: 'FastMmap'
     root_dir: './cache'
     cache_size: '1m'
-
-problems:
-  penney:
-    title: 'Penney Game'
-    input: |
-      4
-      1
-      HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-      2
-      TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-      3
-      HHTTTHHTTTHTHHTHHTTHTTTHHHTHTTHTTHTTTHTH
-      4
-      HTHTHHHTHHHTHTHHHHTTTHTTTTTHHTTTTHTHHHHT
-    output: |
-      1 0 0 0 0 0 0 0 38
-      2 38 0 0 0 0 0 0 0
-      3 4 7 6 4 7 4 5 1
-      4 6 3 4 5 3 6 5 6
