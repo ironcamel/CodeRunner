@@ -1,26 +1,26 @@
-appname: 'CodeRunner'
-layout: 'main'
-charset: 'UTF-8'
-serializer: 'JSON'
-session: 'YAML'
+appname: CodeRunner
+layout: main
+charset: UTF-8
+serializer: JSON
+session: YAML
 
-template: 'template_toolkit'
+template: template_toolkit
 engines:
   template_toolkit:
-    encoding:  'utf8'
+    encoding:  utf8
     start_tag: '[%'
     end_tag:   '%]'
   JSON:
     utf8: 1
     pretty: 1
 
-queue: '/queue/coderunner'
+queue: /queue/coderunner
 plugins:
   Stomp:
     default:
-      hostname: 'localhost'
+      hostname: localhost
       port: 61613
   'Cache::CHI':
-    driver: 'FastMmap'
-    root_dir: './cache'
-    cache_size: '1m'
+    driver: FastMmap
+    root_dir: /tmp/graphspace-cache
+    cache_size: 1m

@@ -1,5 +1,5 @@
 
-title: 'Penney Game'
+title: Penney Game
 
 description: |
   Penney’s game is a simple game typically played by two players. One version of the game calls for each player to choose a unique three-coin sequence such as HEADS TAILS HEADS (HTH). A fair coin is tossed sequentially some number of times until one of the two sequences appears. The player who chose the first sequence to appear wins the game.
