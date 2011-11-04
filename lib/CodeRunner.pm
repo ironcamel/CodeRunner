@@ -4,9 +4,13 @@ use v5.10;
 use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::Stomp;
+use YAML qw(LoadFile);
 
 get '/' => sub {
-    template 'index';
+    my $problem = LoadFile(config->{appdir} . '/problems/penney.yml');
+    template index => {
+        problem => $problem,
+    };
 };
 
 post '/' => sub {
