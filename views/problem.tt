@@ -1,18 +1,29 @@
 
 <div class="page-header">
-  <h1>[% problem.title %]
-  [% IF is_running %]
-  <small>
-  running...
-  </small>
-  [% END %]
-  </h1>
+  <h1>[% problem.title %]</h1>
 </div>
 
 <!--
 -->
 <div class="row">
   <div class="span14">
+     
+    <div id="success_msg" class="alert-message success" style="display:none">
+      <!--
+      <a class="close" href="#">×</a>
+      -->
+      <p><strong>Great success!</strong></p>
+    </div>
+
+    <div id="error_msg" class="alert-message error" style="display:none">
+      <p><strong>Oops:</strong> <span></span></p>
+    </div>
+  
+    [% IF is_running %]
+    <div id="running_msg" class="alert-message block-message info">
+      <p><strong>Running...</strong> Please be patient ...</p>
+    </div>
+    [% END %]
 
     <p>
     <button id="solve_btn" type="button" class="btn">Solve</button>
@@ -57,7 +68,8 @@ var t_id = window.setInterval(function() {
     $.get('[% request.uri_base %]/status/[% run_id %]', function(data) {
         if (++poll_count > 10) {
             window.clearInterval(t_id);
-            $('.page-header h1 small').html('TOOK TOO LONG');
+            $('#error_msg p span').html('Took too long.');
+            $('#error_msg').show();
             return;
         }
         console.log(data);
@@ -66,10 +78,10 @@ var t_id = window.setInterval(function() {
         if (data.status == -1) // Still running
             return;
         if (data.status == 1) {
-            $('.page-header h1 small').html('SUCCESS');
+            $('#success_msg').show();
             window.clearInterval(t_id);
         } else {
-            $('.page-header h1 small').html('FAILED');
+            $('#error_msg').show();
             window.clearInterval(t_id);
         }
     });

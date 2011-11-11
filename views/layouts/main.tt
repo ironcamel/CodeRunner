@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Code Runner</title>
+    <title>CodeRunner</title>
     <meta name="description" content="">
     <meta name="author" content="">
 
@@ -85,7 +85,7 @@
     <div class="topbar">
       <div class="fill">
         <div class="container">
-          <a class="brand" href="[% request.uri_base %]">Code Runner</a>
+          <a class="brand" href="[% request.uri_base %]">CodeRunner</a>
           <ul class="nav">
             <li class="active"><a href="[% request.uri_base %]">Home</a></li>
             <li><a href="#about">About</a></li>
