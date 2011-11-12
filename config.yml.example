@@ -3,6 +3,7 @@ layout: main
 charset: UTF-8
 serializer: JSON
 session: YAML
+admin_pass: 123456
 
 template: template_toolkit
 engines:
