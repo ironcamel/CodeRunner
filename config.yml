@@ -16,6 +16,10 @@ engines:
 
 queue: /queue/coderunner
 plugins:
+  DBIC:
+    default:
+      schema_class: CodeRunner::Schema
+      dsn: dbi:SQLite:dbname=/home/naveed/projects/CodeRunner/data/coderunner.db
   Stomp:
     default:
       hostname: localhost

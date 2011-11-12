@@ -3,9 +3,15 @@ use v5.10;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
+use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Stomp;
 use File::Basename qw(fileparse);
 use YAML qw(LoadFile DumpFile Bless);
+
+hook before_template_render => sub {
+    my $tokens = shift;
+    $tokens->{user_id} = session 'user_id';
+};
 
 get '/' => sub {
     my @problems;
@@ -20,9 +26,25 @@ get '/' => sub {
     };
 };
 
-get '/admin' => sub {
-    template 'admin';
+post '/login' => sub {
+    my $username = param 'username';
+    my $password = param 'password';
+    my $user = schema->resultset('User')->find($username);
+    if ($user and $user->password eq $password) {
+        session user_id => $username;
+        redirect uri_for '/';
+    } else {
+        session user_id => undef;
+        redirect uri_for('/login', { failed => 1 });
+    }
 };
+
+get '/logout' => sub {
+    session->destroy;
+    redirect uri_for '/';
+};
+
+get '/admin' => sub { template 'admin' };
 
 post '/add_problem' => sub {
     my $prob_name = param 'problem_title';
@@ -47,8 +69,7 @@ post '/add_problem' => sub {
     if (-e $filepath){
         return {err_msg => 'A Problem with that title already exists'};
     }
-    DumpFile($filepath,
-                    $problem_data);
+    DumpFile($filepath, $problem_data);
 
     return {problem_url => uri_for("/problems/$prob_name")->as_string()};
 
@@ -94,6 +115,31 @@ post '/cb' => sub {
     my $run_id = param 'run_id';
     cache_set $run_id => request->body;
     return '';
+};
+
+post '/ajax/users' => sub {
+    my $username = param 'username'
+        or return { err_msg => 'The username is missing.' };
+    my $password = param 'password'
+        or return { err_msg => 'The password is missing.' };
+    my $email = param 'email';
+    if ($email and $email !~ /.+@..+\...+/) {
+        return { err_msg => "The email [$email] is invalid." }
+    }
+    my $user = {
+        id       => $username,
+        password => $password,
+        $email ? (email => $email) : (),
+    };
+    debug "Creating new user: ", $user;
+    eval { schema->resultset('User')->create($user) };
+    if ($@) {
+        error $@;
+        return { err_msg =>  "The username '$username' is already taken." }
+            if $@ =~ /column id is not unique/;
+        return { err_msg => "Could not create user '$username': $@." };
+    }
+    return { is_success => 1 };
 };
 
 sub get_problem {

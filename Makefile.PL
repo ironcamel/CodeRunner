@@ -12,6 +12,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Cache::FastMmap'            => '0',
         'Dancer'                     => '1.3072',
+        'Dancer::Plugin::DBIC'       => '0',
         'Dancer::Plugin::Stomp'      => '0',
         'Dancer::Plugin::Cache::CHI' => '0',
         'Data::Dump'                 => '0',
