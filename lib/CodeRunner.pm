@@ -9,6 +9,10 @@ use Dancer::Plugin::Stomp;
 use File::Basename qw(fileparse);
 use YAML qw(LoadFile DumpFile Bless);
 
+# Automagically create db tables the first time this app is run
+eval { schema->resultset('User')->count };
+schema->deploy if $@;
+
 hook before_template_render => sub {
     my $tokens = shift;
     $tokens->{user_id} = session 'user_id';
