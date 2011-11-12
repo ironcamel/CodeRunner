@@ -63,12 +63,21 @@ get '/leaderboard' => sub {
     };
 };
 
+get '/login' => sub {
+    if (param 'failed') {
+        template 'bad_login';
+    }
+    else {
+        redirect uri_for '/';
+    }
+};
+
 post '/login' => sub {
     my $username = param 'username';
     my $password = param 'password';
 
     # admin special case
-    my $is_admin = $username eq 'admin' and $password eq config->{admin_pass};
+    my $is_admin = (($username eq 'admin') and ($password eq config->{admin_pass}));
 
     my $user = schema->resultset('User')->find($username);
     if ($is_admin or ($user and $user->password eq $password)) {
