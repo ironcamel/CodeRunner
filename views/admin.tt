@@ -1,0 +1,176 @@
+<section id="add-problem">
+  <div class="page-header">
+    <h1>Administration</h1>
+  </div>
+
+<!--
+-->
+<div class="row">
+  <div class="span14">
+     
+    <div id="success_msg" class="alert-message success" style="display:none">
+      <!--
+      <a class="close" href="#">×</a>
+      -->
+      <p><strong>Great success!</strong></p>
+    </div>
+
+    <div id="error_msg" class="alert-message error" style="display:none">
+      <p><strong>Oops:</strong> <span></span></p>
+    </div>
+
+    <p>
+      <button id="add_problem_btn" type="button" class="btn">
+        Add Problem
+      </button>
+    </p>
+
+    <form id="add_problem_form" class="form-stacked" action="add_problem" method="post"
+          enctype="multipart/form-data" style="display:none">
+      <fieldset>
+      <legend>Add Problem</legend>
+      <div class="clearfix">
+
+        <label for="problem_title">Title</label>
+        <div class="input">
+          <input id="problem_title" class="xlInput" type="text"
+                 name="problem_title" />
+        </div>
+
+        <br/>
+
+        <label for="problem_desc">Description</label>
+        <div class="input">
+          <textarea id="problem_desc" class="xxlarge" rows="8"
+                 name="problem_desc"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_input_desc">Input Description</label>
+        <div class="input">
+          <textarea id="problem_input_desc" class="xxlarge" rows="4"
+                 name="problem_input_desc"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_output_desc">Output Description</label>
+        <div class="input">
+          <textarea id="problem_output_desc" class="xxlarge" rows="4"
+                 name="problem_output_desc"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_sample_input">Sample Input</label>
+        <div class="input">
+          <textarea id="problem_sample_input" class="xxlarge" rows="5"
+                 name="problem_sample_input"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_sample_output">Sample Output</label>
+        <div class="input">
+          <textarea id="problem_sample_output" class="xxlarge" rows="5"
+                 name="problem_sample_output"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_input">Input</label>
+        <div class="input">
+          <textarea id="problem_input" class="xxlarge" rows="5" type="text"
+                 name="problem_input"></textarea>
+        </div>
+
+        <br/>
+
+        <label for="problem_output">Output</label>
+        <div class="input">
+          <textarea id="problem_output" class="xxlarge" rows="5" type="text"
+                 name="problem_output"></textarea>
+        </div>
+
+        <br/>
+
+        <div class="well">
+          <button id="submit_btn" class="btn primary" type="button">
+            Submit Problem
+          </button>
+          <button id="hide_add_problem_btn" class="btn" type="button">Hide</button>
+        </div>
+ <!-- Modal for problem successfully added -->
+        <div id="problem-added-modal" class="modal hide fade">
+          <div class="modal-header">
+            <a href="#" class="close">×</a>
+
+            <h3>Problem Added Successfully</h3>
+          </div>
+          <div class="modal-body">
+            <p>Your problem was successfully added.</p>
+          </div>
+          <div class="modal-footer">
+            <a href="#" id="new-problem-link" class="btn primary">Go to Problem</a>
+            <a href="/admin" class="btn secondary">Back to Admin</a>
+          </div>
+        </div>
+
+ <!-- Modal for problem already exists -->
+        <div id="problem-exists-modal" class="modal hide fade">
+          <div class="modal-header">
+            <a href="#" class="close">×</a>
+
+            <h3>Problem Already Exists!</h3>
+          </div>
+          <div class="modal-body">
+            <p>A Problem with the title you are trying to add already exists.</p>
+          </div>
+          <div class="modal-footer">
+            <a href="#" class="close">Close</a
+          </div>
+        </div>
+
+      </fieldset>
+
+      </div>
+    </form>
+
+<script type="text/javascript" charset="utf-8">
+$('#add_problem_btn').click(function() {
+    $(this).hide();
+    $('#add_problem_form').show();
+})
+$('#hide_add_problem_btn').click(function() {
+    $('#add_problem_btn').show();
+    $('#add_problem_form').hide();
+})
+
+$('#submit_btn').click(function() {
+  //TODO (ameade): validate form
+  
+    $.post("/add_problem",
+        {
+          problem_title: $('#problem_title').val(),
+          problem_desc: $('#problem_desc').val(),
+          problem_input_desc: $('#problem_input_desc').val(),
+          problem_output_desc: $('#problem_output_desc').val(),
+          problem_sample_input: $('#problem_sample_input').val(),
+          problem_sample_output: $('#problem_sample_output').val(),
+          problem_input: $('#problem_input').val(),
+          problem_output: $('#problem_output').val(),
+        },
+        function(data) {
+            if (data.err_msg) {
+                $('#problem-exists-modal').modal('show');
+            } else {
+                $('#new-problem-link').attr('href', data.problem_url);
+                $('#problem-added-modal').modal('show');
+            }
+        })
+    });
+</script>
+
+  </div>
+</div>

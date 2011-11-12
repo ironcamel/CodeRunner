@@ -22,5 +22,5 @@ plugins:
       port: 61613
   'Cache::CHI':
     driver: FastMmap
-    root_dir: /tmp/graphspace-cache
+    root_dir: /tmp/alex-graphspace-cache
     cache_size: 1m

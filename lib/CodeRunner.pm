@@ -5,7 +5,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::Stomp;
 use File::Basename qw(fileparse);
-use YAML qw(LoadFile);
+use YAML qw(LoadFile DumpFile Bless);
 
 get '/' => sub {
     my @problems;
@@ -18,6 +18,40 @@ get '/' => sub {
     template problems => {
         problems => \@problems,
     };
+};
+
+get '/admin' => sub {
+    template 'admin';
+};
+
+post '/add_problem' => sub {
+    my $prob_name = param 'problem_title';
+    $prob_name =~ s/\s/-/g;
+    my $problem_data = {
+        title         => param('problem_title'),
+        description   => param('problem_desc'),
+        input_desc    => param('problem_input_desc'),
+        output_desc   => param('problem_output_desc'),
+        sample_input  => param('problem_sample_input'),
+        sample_output => param('problem_sample_output'),
+        input         => param('problem_input'),
+        output        => param('problem_output'),
+    };
+    local $YAML::UseHeader = 0;
+    local $YAML::CompressSeries = 0;
+    Bless($problem_data)->keys(['title', 'description',
+                                'input_desc', 'output_desc',
+                                'sample_input', 'sample_output',
+                                'input', 'output']);
+    my $filepath = config->{appdir} . "/problems/$prob_name.yml";
+    if (-e $filepath){
+        return {err_msg => 'A Problem with that title already exists'};
+    }
+    DumpFile($filepath,
+                    $problem_data);
+
+    return {problem_url => uri_for("/problems/$prob_name")->as_string()};
+
 };
 
 get '/problems/:problem' => sub {
