@@ -232,6 +232,14 @@ post '/cb' => sub {
 };
 
 post '/ajax/users' => sub {
+
+    if (config->{captcha}{enabled} and
+        !check_captcha(param('captcha_challenge'),
+                       param('captcha_response'),
+                       param('remote_address'))){
+        return {err_msg => 'The CAPTCHA is incorrect.', captcha_failure => 1}
+    }
+
     my $username = param 'username'
         or return { err_msg => 'The username is missing.' };
     my $password = param 'password'
