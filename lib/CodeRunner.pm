@@ -66,8 +66,12 @@ get '/leaderboard' => sub {
 post '/login' => sub {
     my $username = param 'username';
     my $password = param 'password';
+
+    # admin special case
+    my $is_admin = $username eq 'admin' and $password eq config->{admin_pass};
+
     my $user = schema->resultset('User')->find($username);
-    if ($user and $user->password eq $password) {
+    if ($is_admin or ($user and $user->password eq $password)) {
         session user_id => $username;
         redirect uri_for '/';
     } else {
@@ -81,7 +85,14 @@ get '/logout' => sub {
     redirect uri_for '/';
 };
 
-get '/admin' => sub { template 'admin' };
+get '/admin' => sub { 
+    my $user_id = session 'user_id';
+    if(not $user_id eq 'admin'){
+        redirect uri_for '/';
+    }
+    template 'admin' => {active_nav => 'admin'}
+};
+
 
 post '/add_problem' => sub {
     
@@ -136,6 +147,30 @@ get '/problems/:problem' => sub {
     template problem => {
         problem => get_problem(param 'problem'),
     };
+};
+
+del '/problems/:problem' => sub {
+    my $prob_name = param 'problem';
+    my $problem = get_problem($prob_name); 
+    my $filepath = config->{appdir} . "/problems/$prob_name.yml";
+    if (-e $filepath){
+        if(unlink($filepath) == 0){
+            return {err_msg => "yml file for $prob_name could not be deleted"};
+        }
+    }
+    else{
+        return {err_msg => "No problem located at $filepath."};
+    }
+
+
+    schema->resultset('Problem')->search({
+        name => $problem->{title},
+    })->delete;
+    schema->resultset('Attempt')->search({
+        problem => $problem->{title},
+    })->delete;
+
+    return {};
 };
 
 get '/problems/:problem/print-friendly' => sub {

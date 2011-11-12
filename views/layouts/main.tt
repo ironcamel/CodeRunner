@@ -169,6 +169,11 @@ function updateCaptcha(public_key) {
             <li [% active_nav == 'rankings' ? 'class="active"' : '' %]>
               <a href="[% request.uri_base %]/leaderboard">Rankings</a>
             </li>
+          [% IF user_id == 'admin' %]
+            <li [% active_nav == 'admin' ? 'class="active"' : '' %]>
+              <a href="[% request.uri_base %]/admin">Admin</a>
+            </li>
+          [% END %]
             <li><a href="#about">About</a></li>
           </ul>
 
