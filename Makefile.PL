@@ -23,6 +23,7 @@ WriteMakefile(
         'JSON'                       => '0',
         'YAML'                       => '0',
         'JSON'                       => '0',
+        'SQL::Translator'            => '0.11006',
         'Template'                   => '0',
         'Try::Tiny'                  => '0',
         'YAML'                       => '0',
