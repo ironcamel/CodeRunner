@@ -25,6 +25,12 @@ $stomp->subscribe({
     ack         => 'client',
 });
 
+$SIG{INT} = sub {
+    $stomp->disconnect;
+    say 'goodbye';
+    exit;
+};
+
 while (1) {
     my $frame = $stomp->receive_frame;
     my $msg = $frame->body;
@@ -67,9 +73,12 @@ sub post_result {
     my ($status, $reason, $data) = @_;
     print "posting result:";
     my $result = {
-        status => $status,
-        reason => $reason,
-        run_id => $data->{run_id},
+        status  => $status,
+        reason  => $reason,
+        run_id  => $data->{run_id},
+        #data    => $data,
+        user_id => $data->{user_id},
+        problem => $data->{problem}{title},
     };
     dd $result;
     $AGENT->post($data->{cb_url}, content_type => 'application/json',

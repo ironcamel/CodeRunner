@@ -6,7 +6,7 @@ WriteMakefile(
     NAME         => 'CodeRunner',
     AUTHOR       => 'Naveed Massjouni <naveedm9@gmail.com>',
     VERSION_FROM => 'lib/CodeRunner.pm',
-    ABSTRACT     => 'A webapp for programming puzzles and contests',
+    ABSTRACT     => 'A webapp for ACM style programming puzzles and contests',
     LICENSE      => 'perl',
     PL_FILES     => {},
     PREREQ_PM => {
@@ -17,6 +17,7 @@ WriteMakefile(
         'Dancer::Plugin::Stomp'      => '0',
         'Dancer::Plugin::Cache::CHI' => '0',
         'Data::Dump'                 => '0',
+        'DateTime'                   => '0',
         'IPC::Run'                   => '0',
         'LWP::UserAgent'             => '0',
         'Net::Stomp'                 => '0',

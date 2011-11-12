@@ -6,6 +6,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Stomp;
+use DateTime;
 use File::Basename qw(fileparse);
 use YAML qw(LoadFile DumpFile Bless);
 
@@ -101,6 +102,7 @@ post '/problems/:problem' => sub {
     cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
         run_id   => $run_id,
+        user_id  => session('user_id'),
         code     => $file->content,
         language => param('language') || guess_lang($file->basename),
         problem  => $problem,
@@ -126,8 +128,22 @@ get '/status/:run_id' => sub {
 
 post '/cb' => sub {
     my $run_id = param 'run_id';
-    cache_set $run_id => request->body;
-    return '';
+    my $json = request->body;
+    cache_set $run_id => $json;
+
+    my $data = from_json $json;
+    debug $data;
+    my $user_id = $data->{user_id};
+    return unless $user_id;
+    my $user = schema->resultset('User')->find($user_id);
+    return unless $user_id;
+
+    $user->add_to_attempts({
+        problem    => $data->{problem},
+        reason     => $data->{reason},
+        time_of    => DateTime->now,
+        is_success => $data->{status},
+    });
 };
 
 post '/ajax/users' => sub {
