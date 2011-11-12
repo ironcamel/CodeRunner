@@ -2,8 +2,14 @@
 <div class="page-header">
   <h1>
     [% problem.title %]
+
     <a href="[% request.path %]/print-friendly" target="_blank"
   id="print_friendly_btn" class="btn pull-right">Printer Friendly</a>
+
+    [% IF session.user_id == 'admin' %]
+    <button target="_blank"
+  id="delete_problem_btn" class="btn pull-right">Delete Problem</button>
+    [% END %]
   </h1>
 </div>
 <!--
@@ -53,7 +59,6 @@
 
       </div>
     </form>
-
 <script type="text/javascript" charset="utf-8">
 $('#solve_btn').click(function() {
     $(this).hide();
@@ -63,6 +68,24 @@ $('#hide_btn').click(function() {
     $('#solve_btn').show();
     $('#code_form').hide();
 })
+
+[% IF session.user_id == 'admin' %]
+$('#delete_problem_btn').click(function() {
+    var answer = confirm('Are you sure you want to delete this problem?');
+    if(answer){
+          $.ajax({url: '[% request.path %]',
+                  type: 'DELETE',
+                  success: function(data) {
+                      if (data.err_msg) {
+                        alert(data.err_msg);
+                      }
+                      else {
+                        alert("Problem Deleted");
+                      }
+        }});
+    }
+});
+[% END %]
 
 [% IF is_running %]
 var poll_count = 0;
