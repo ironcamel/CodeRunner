@@ -113,6 +113,13 @@ get '/problems/:problem' => sub {
     };
 };
 
+get '/problems/:problem/print-friendly' => sub {
+    set layout => 'print_friendly';
+    template problem => {
+        problem => get_problem(param 'problem'),
+    };
+};
+
 post '/problems/:problem' => sub {
     my $problem = get_problem(param 'problem');
     my $file = upload 'code_file';
