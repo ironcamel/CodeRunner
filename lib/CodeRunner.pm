@@ -31,6 +31,18 @@ get '/' => sub {
     };
 };
 
+get '/leaderboard' => sub {
+    #my @users = schema->resultset('User')->all;
+    my $users = [
+        { id => 'bob', num_successes => 20 },
+        { id => 'sue', num_successes => 19 },
+        { id => 'joe', num_successes => 11 },
+    ];
+    template leaderboard => {
+        users => $users,
+    };
+};
+
 post '/login' => sub {
     my $username = param 'username';
     my $password = param 'password';
