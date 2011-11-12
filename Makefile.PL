@@ -11,6 +11,7 @@ WriteMakefile(
     PL_FILES     => {},
     PREREQ_PM => {
         'Cache::FastMmap'            => '0',
+        'Captcha::reCAPTCHA'         => '0',
         'Dancer'                     => '1.3072',
         'Dancer::Plugin::DBIC'       => '0',
         'Dancer::Plugin::Stomp'      => '0',
