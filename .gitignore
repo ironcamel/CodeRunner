@@ -1,0 +1,6 @@
+config.yml
+problems/*
+sessions/*
+*.swp
+
+!problems/penney.yml
