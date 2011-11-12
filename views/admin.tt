@@ -122,21 +122,6 @@
           </div>
         </div>
 
- <!-- Modal for problem already exists -->
-        <div id="problem-exists-modal" class="modal hide fade">
-          <div class="modal-header">
-            <a href="#" class="close">×</a>
-
-            <h3>Problem Already Exists!</h3>
-          </div>
-          <div class="modal-body">
-            <p>A Problem with the title you are trying to add already exists.</p>
-          </div>
-          <div class="modal-footer">
-            <a href="#" class="close">Close</a
-          </div>
-        </div>
-
       </fieldset>
 
       </div>
@@ -174,7 +159,7 @@ $('#submit_btn').click(function() {
         },
         function(data) {
             if (data.err_msg) {
-                $('#problem-exists-modal').modal('show');
+                alert(data.err_msg);
             }
             else if(data.captcha_failure){
                 alert("Incorrect Captcha");
