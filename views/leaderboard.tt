@@ -19,13 +19,13 @@
       </thead>
 
       <tbody>
-        [% FOR user IN users %]
+        [% FOR user IN leaders %]
         <tr>
           <td>
-          [% user.id %]
+          [% user.user_id %]
           </td>
           <td>
-          [% user.num_successes %]
+          [% user.num_solved %]
           </td>
         </tr>
         [% END %]

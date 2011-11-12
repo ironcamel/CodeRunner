@@ -33,14 +33,20 @@ get '/' => sub {
 };
 
 get '/leaderboard' => sub {
-    #my @users = schema->resultset('User')->all;
-    my $users = [
-        { id => 'bob', num_successes => 20 },
-        { id => 'sue', num_successes => 19 },
-        { id => 'joe', num_successes => 11 },
-    ];
+    #select user_id, count(distinct problem) from attempt where is_success=1 group by user_id;
+    my @attempts = schema->resultset('Attempt')->search(
+        {
+            is_success => 1,
+        },
+        {
+            select => [ 'user_id', {count => {distinct => 'problem'}} ],
+            as     => [ 'user_id', 'num_solved' ],
+            group_by => 'user_id',
+        }
+    );
     template leaderboard => {
-        users => $users,
+        active_nav => 'rankings',
+        leaders    => [ map +{ $_->get_columns }, @attempts ],
     };
 };
 
