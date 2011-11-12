@@ -35,13 +35,14 @@ get '/' => sub {
 get '/leaderboard' => sub {
     #select user_id, count(distinct problem) from attempt where is_success=1 group by user_id;
     my @attempts = schema->resultset('Attempt')->search(
+        { is_success => 1 },
         {
-            is_success => 1,
-        },
-        {
-            select => [ 'user_id', {count => {distinct => 'problem'}} ],
-            as     => [ 'user_id', 'num_solved' ],
-            group_by => 'user_id',
+            select    => [ 'user_id', { count => {distinct => 'problem'},
+                                        -as => 'num_solved'}
+                         ],
+            as        => [ 'user_id', 'num_solved' ],
+            group_by  => 'user_id',
+            order_by  => { -desc => 'num_solved' },
         }
     );
     template leaderboard => {
@@ -200,6 +201,7 @@ sub guess_lang {
         when (/\.java$/) { return 'java' }
         when (/\.pl$/  ) { return 'perl' }
         when (/\.py$/  ) { return 'python' }
+        when (/\.rb$/  ) { return 'ruby' }
     }
     return 'c++';
 }
