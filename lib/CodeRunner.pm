@@ -102,6 +102,18 @@ post '/add_problem' => sub {
         return {err_msg => 'A Problem with that title already exists'};
     }
     DumpFile($filepath, $problem_data);
+    #Add problem to DB
+    my $problem = {
+        name => $problem_data->{title},
+    };
+    debug "Creating new problem: ", $problem;
+    eval { schema->resultset('Problem')->create($problem) };
+    if ($@) {
+        error $@;
+        return { err_msg =>  "The problem '$problem' is already taken." }
+            if $@ =~ /column id is not unique/;
+        return { err_msg => "Could not create problem '$problem': $@." };
+    }
 
     return {problem_url => uri_for("/problems/$prob_name")->as_string()};
 
