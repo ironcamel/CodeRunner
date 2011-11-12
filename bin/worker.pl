@@ -58,7 +58,8 @@ sub validate {
     print $tmp $data->{code};
     my ($out, $err);
     try {
-        run([ "/usr/local/bin/perl", "$tmp" ], \$input, \$out, \$err,
+        #run([ "/usr/local/bin/perl", "$tmp" ], \$input, \$out, \$err,
+        run([ $data->{language}, "$tmp" ], \$input, \$out, \$err,
             timeout(3));
     } catch {
         post_result(0, 'Took too long.', $data);
