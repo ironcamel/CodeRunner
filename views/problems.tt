@@ -10,11 +10,35 @@
 <div class="row">
   <div class="span14">
 
-    [% FOR p IN problems %]
-    <p>
-      <a href="[% p.url %]">[% p.title %]</a>
-    </p>
-    [% END %]
+
+    <table class="zebra-striped">
+      <thead style="background: lightblue">
+        <tr>
+          <th style="width: 70%">Name</th>
+          <th style="width: 20%; text-align: right">Solved / Attempted</th>
+          <th style="width: 10%; text-align: right">%</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        [% FOR p IN problems %]
+        <tr>
+          <td>
+            <a href="[% p.url %]">[% p.title %]</a>
+          </td>
+          <td style="text-align: right">
+            [% p.solved %] / [% p.attempts %]
+          </td>
+          <td style="text-align: right">
+            [% IF p.attempts %]
+              [% value = p.solved / p.attempts * 100 %]
+              [% value.remove('\..*') %]
+            [% END %]
+          </td>
+        </tr>
+        [% END %]
+      </tbody>
+    </table>
 
   </div>
 </div>
