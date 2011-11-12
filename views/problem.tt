@@ -1,8 +1,11 @@
 
 <div class="page-header">
-  <h1>[% problem.title %]</h1>
+  <h1>
+    [% problem.title %]
+    <a href="[% request.path %]/print-friendly" target="_blank"
+  id="print_friendly_btn" class="btn pull-right">Printer Friendly</a>
+  </h1>
 </div>
-
 <!--
 -->
 <div class="row">
