@@ -24,9 +24,21 @@ get '/' => sub {
     for my $path (glob config->{appdir} . '/problems/*.yml') {
         my $problem = LoadFile($path);
         my($name, $dir, $suffix) = fileparse($path, '.yml', '.yaml');
-        push @problems,
-            { title => $problem->{title}, url => uri_for("/problems/$name") };
+        my $attempts = schema->resultset('Attempt')->search({
+            problem => $problem->{title},
+        })->count;
+        my $solved = schema->resultset('Attempt')->search({
+            problem    => $problem->{title},
+            is_success => 1,
+        })->count;
+        push @problems, {
+            title    => $problem->{title},
+            attempts => $attempts,
+            solved => $solved,
+            url      => uri_for("/problems/$name")
+        };
     }
+
     template problems => {
         problems => \@problems,
     };
