@@ -28,3 +28,8 @@ plugins:
     driver: FastMmap
     root_dir: /tmp/alex-graphspace-cache
     cache_size: 1m
+
+captcha:
+  enabled: 1
+  public_key: 6Ld9C68O5E13KzJi06QOw_gdjEOw_gdjEAjaVnGM
+  private_key: 6LuPwvBXeZBCumuPwvBXeZBCumeZtuBsEgWJinfK

@@ -1,6 +1,7 @@
 package CodeRunner;
 use v5.10;
 
+use Captcha::reCAPTCHA;
 use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::DBIC;
@@ -47,6 +48,14 @@ get '/logout' => sub {
 get '/admin' => sub { template 'admin' };
 
 post '/add_problem' => sub {
+    
+    if (config->{captcha}{enabled} and
+        !check_captcha(param('captcha_challenge'),
+                       param('captcha_response'),
+                       param('remote_address'))){
+        return {captcha_failure => 1}
+    }
+
     my $prob_name = param 'problem_title';
     $prob_name =~ s/\s/-/g;
     my $problem_data = {
@@ -155,6 +164,28 @@ sub guess_lang {
         when (/\.py$/  ) { return 'python' }
     }
     return 'c++';
+}
+
+sub check_captcha {
+    my ($challenge, $response, $remote_address) = @_;
+    my $c = Captcha::reCAPTCHA->new;
+
+    # Verify submission
+    my $result = $c->check_answer(
+        config->{captcha}{private_key},
+        $remote_address,
+        $challenge, $response
+    );
+
+    if ( $result->{is_valid} ) {
+        return true;
+    }
+    else {
+        # Error
+        my $error = $result->{error};
+        return false;
+    }
+
 }
 
 true;

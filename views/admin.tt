@@ -95,6 +95,11 @@
 
         <br/>
 
+        <div id="captcha">
+        </div>
+
+        <br/>
+
         <div class="well">
           <button id="submit_btn" class="btn primary" type="button">
             Submit Problem
@@ -138,6 +143,9 @@
     </form>
 
 <script type="text/javascript" charset="utf-8">
+
+updateCaptcha('[% settings.captcha.public_key %]');
+
 $('#add_problem_btn').click(function() {
     $(this).hide();
     $('#add_problem_form').show();
@@ -149,7 +157,7 @@ $('#hide_add_problem_btn').click(function() {
 
 $('#submit_btn').click(function() {
   //TODO (ameade): validate form
-  
+    
     $.post("/add_problem",
         {
           problem_title: $('#problem_title').val(),
@@ -160,11 +168,19 @@ $('#submit_btn').click(function() {
           problem_sample_output: $('#problem_sample_output').val(),
           problem_input: $('#problem_input').val(),
           problem_output: $('#problem_output').val(),
+          captcha_challenge: $('#recaptcha_challenge_field').val(),
+          captcha_response: $('#recaptcha_response_field').val(),
+          remote_address: "[% request.remote_address %]",
         },
         function(data) {
             if (data.err_msg) {
                 $('#problem-exists-modal').modal('show');
-            } else {
+            }
+            else if(data.captcha_failure){
+                alert("Incorrect Captcha");
+                updateCaptcha('[% settings.captcha.public_key %]');
+            }
+            else {
                 $('#new-problem-link').attr('href', data.problem_url);
                 $('#problem-added-modal').modal('show');
             }
