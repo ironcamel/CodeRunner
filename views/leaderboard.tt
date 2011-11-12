@@ -1,0 +1,36 @@
+
+<div class="page-header">
+  <h1>
+    Leaderboard
+  </h1>
+</div>
+
+<!--
+-->
+<div class="row">
+  <div class="span6">
+
+    <table class="zebra-striped">
+      <thead style="background: lightblue">
+        <tr>
+          <th style="width: 75px">Name</th>
+          <th style="width: 100px">Problems Solved</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        [% FOR user IN users %]
+        <tr>
+          <td>
+          [% user.id %]
+          </td>
+          <td>
+          [% user.num_successes %]
+          </td>
+        </tr>
+        [% END %]
+      </tbody>
+    </table>
+
+  </div>
+</div>
