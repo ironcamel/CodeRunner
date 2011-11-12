@@ -68,7 +68,7 @@ var t_id = window.setInterval(function() {
     $.get('[% request.uri_base %]/status/[% run_id %]', function(data) {
         if (++poll_count > 10) {
             window.clearInterval(t_id);
-            $('#error_msg p span').html('Took too long.');
+            $('#error_msg p span').html('Took too long!');
             $('#error_msg').show();
             return;
         }
@@ -81,6 +81,7 @@ var t_id = window.setInterval(function() {
             $('#success_msg').show();
             window.clearInterval(t_id);
         } else {
+            $('#error_msg p span').html(data.reason);
             $('#error_msg').show();
             window.clearInterval(t_id);
         }
