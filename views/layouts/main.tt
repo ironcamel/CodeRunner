@@ -58,11 +58,16 @@ $(function() {
         var params = validate_account();
         if (!params)
             return;
+        params["captcha_challenge"] =  $('#recaptcha_challenge_field').val();
+        params["captcha_response"] = $('#recaptcha_response_field').val();
+        params["remote_address"] = "[% request.remote_address %]";
         $.post("[% request.uri_base %]/ajax/users", params, function(data) {
             if (!data) {
               account_error('I do not know why');
             }
             if (data.err_msg) {
+                if(data.captcha_failure)
+                    updateCaptcha('[% settings.captcha.public_key %]');
                 account_error(data.err_msg);
             } else {
                 $('#account-modal div.success').show();
@@ -219,6 +224,10 @@ function updateCaptcha(public_key) {
                     <input id="password2" type="password" name="password2"/>
                   </div>
                 </div>
+                <div class="clearfix">
+                  <div id="captcha">
+                  </div>
+                </div>
                 <div class="alert-message error" style="display:none">
                   <p><strong>Oops: </strong></p>
                 </div>
@@ -266,6 +275,9 @@ function updateCaptcha(public_key) {
       </footer>
 
     </div> <!-- /container -->
+  <script>
+    updateCaptcha('[% settings.captcha.public_key %]');
+  </script>
 
   </body>
 </html>
