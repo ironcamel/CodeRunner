@@ -81,6 +81,7 @@ $('#delete_problem_btn').click(function() {
                       }
                       else {
                         alert("Problem Deleted");
+                        window.location = '[% request.uri_base %]';
                       }
         }});
     }
