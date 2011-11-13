@@ -173,7 +173,7 @@ get '/problems/:problem/print-friendly' => sub {
 post '/problems/:problem' => sub {
     my $problem = get_problem(param 'problem');
     my $file = upload 'code_file';
-    my $run_id = session->id;
+    my $run_id = int rand() * 1_000_000_000;
     cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
         run_id   => $run_id,
