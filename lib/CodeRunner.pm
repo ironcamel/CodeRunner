@@ -5,6 +5,7 @@ use Captcha::reCAPTCHA;
 use Dancer ':syntax';
 use Dancer::Plugin::Cache::CHI;
 use Dancer::Plugin::DBIC;
+use Dancer::Plugin::Passphrase;
 use Dancer::Plugin::Stomp;
 use DateTime;
 use File::Basename qw(fileparse);
@@ -64,23 +65,21 @@ get '/leaderboard' => sub {
 };
 
 get '/login' => sub {
-    if (param 'failed') {
-        template 'bad_login';
-    }
-    else {
-        redirect uri_for '/';
-    }
+    param('failed') ? template('bad_login') : redirect uri_for '/';
 };
 
 post '/login' => sub {
     my $username = param 'username';
     my $password = param 'password';
+    my $passphrase = passphrase($password);
 
-    # admin special case
-    my $is_admin = (($username eq 'admin') and ($password eq config->{admin_pass}));
+    my $is_admin;
+    if (config->{admin_pass}) {
+        $is_admin = $username eq 'admin' and $password eq config->{admin_pass};
+    }
 
     my $user = schema->resultset('User')->find($username);
-    if ($is_admin or ($user and $user->password eq $password)) {
+    if ($is_admin or ($user and $passphrase->matches($user->password))) {
         session user_id => $username;
         redirect uri_for '/';
     } else {
@@ -95,13 +94,9 @@ get '/logout' => sub {
 };
 
 get '/admin' => sub { 
-    my $user_id = session 'user_id';
-    if(not $user_id eq 'admin'){
-        redirect uri_for '/';
-    }
-    template 'admin' => {active_nav => 'admin'}
+    return redirect uri_for '/' unless 'admin' eq session 'user_id';
+    template 'admin' => { active_nav => 'admin' };
 };
-
 
 post '/add_problem' => sub {
     
@@ -242,9 +237,10 @@ post '/ajax/users' => sub {
     if ($email and $email !~ /.+@..+\...+/) {
         return { err_msg => "The email [$email] is invalid." }
     }
+
     my $user = {
         id       => $username,
-        password => $password,
+        password => passphrase($password)->generate_hash,
         $email ? (email => $email) : (),
     };
     debug "Creating new user: ", $user;
