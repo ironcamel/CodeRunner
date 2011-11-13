@@ -75,7 +75,7 @@ post '/login' => sub {
 
     my $is_admin;
     if (config->{admin_pass}) {
-        $is_admin = $username eq 'admin' and $password eq config->{admin_pass};
+        $is_admin = $username eq 'admin' && $password eq config->{admin_pass};
     }
 
     my $user = schema->resultset('User')->find($username);
