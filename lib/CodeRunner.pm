@@ -105,11 +105,12 @@ get '/admin' => sub {
 
 post '/add_problem' => sub {
     
-    if (config->{captcha}{enabled} and
-        !check_captcha(param('captcha_challenge'),
-                       param('captcha_response'),
-                       param('remote_address'))){
-        return {captcha_failure => 1}
+    if (config->{captcha}{enabled}) {
+        return { captcha_failure => 1 }
+            unless check_captcha(
+                param('captcha_challenge'),
+                param('captcha_response'),
+                param('remote_address'));
     }
 
     my $prob_name = param 'problem_title';
@@ -126,19 +127,15 @@ post '/add_problem' => sub {
     };
     local $YAML::UseHeader = 0;
     local $YAML::CompressSeries = 0;
-    Bless($problem_data)->keys(['title', 'description',
-                                'input_desc', 'output_desc',
-                                'sample_input', 'sample_output',
-                                'input', 'output']);
+    Bless($problem_data)->keys([qw(title description input_desc output_desc
+        sample_input sample_output input output)]);
     my $filepath = config->{appdir} . "/problems/$prob_name.yml";
     if (-e $filepath){
         return {err_msg => 'A Problem with that title already exists'};
     }
     DumpFile($filepath, $problem_data);
-    #Add problem to DB
-    my $problem = {
-        name => $problem_data->{title},
-    };
+
+    my $problem = { name => $problem_data->{title} };
     debug "Creating new problem: ", $problem;
     eval { schema->resultset('Problem')->create($problem) };
     if ($@) {
@@ -148,7 +145,7 @@ post '/add_problem' => sub {
         return { err_msg => "Could not create problem '$problem': $@." };
     }
 
-    return {problem_url => uri_for("/problems/$prob_name")->as_string()};
+    return { problem_url => uri_for("/problems/$prob_name")->as_string() };
 
 };
 
@@ -162,23 +159,12 @@ del '/problems/:problem' => sub {
     my $prob_name = param 'problem';
     my $problem = get_problem($prob_name); 
     my $filepath = config->{appdir} . "/problems/$prob_name.yml";
-    if (-e $filepath){
-        if(unlink($filepath) == 0){
-            return {err_msg => "yml file for $prob_name could not be deleted"};
-        }
+    if (-e $filepath) {
+        return { err_msg => "yml file for $prob_name could not be deleted" }
+            unless unlink $filepath;
     }
-    else{
-        return {err_msg => "No problem located at $filepath."};
-    }
-
-
-    schema->resultset('Problem')->search({
-        name => $problem->{title},
-    })->delete;
-    schema->resultset('Attempt')->search({
-        problem => $problem->{title},
-    })->delete;
-
+    schema->resultset('Problem')->search({ name => $problem->{title} })
+          ->delete_all();
     return {};
 };
 
@@ -242,11 +228,12 @@ post '/cb' => sub {
 
 post '/ajax/users' => sub {
 
-    if (config->{captcha}{enabled} and
-        !check_captcha(param('captcha_challenge'),
-                       param('captcha_response'),
-                       param('remote_address'))){
-        return {err_msg => 'The CAPTCHA is incorrect.', captcha_failure => 1}
+    if (config->{captcha}{enabled}) {
+        return { err_msg => 'The CAPTCHA is incorrect.', captcha_failure => 1 }
+            unless check_captcha(
+                param('captcha_challenge'),
+                param('captcha_response'),
+                param('remote_address'));
     }
 
     my $username = param 'username'
@@ -292,23 +279,10 @@ sub guess_lang {
 sub check_captcha {
     my ($challenge, $response, $remote_address) = @_;
     my $c = Captcha::reCAPTCHA->new;
-
-    # Verify submission
-    my $result = $c->check_answer(
-        config->{captcha}{private_key},
-        $remote_address,
-        $challenge, $response
-    );
-
-    if ( $result->{is_valid} ) {
-        return true;
-    }
-    else {
-        # Error
-        my $error = $result->{error};
-        return false;
-    }
-
+    my $result = $c->check_answer(config->{captcha}{private_key},
+        $remote_address, $challenge, $response);
+    #my $error = $result->{error};
+    return $result->{is_valid};
 }
 
 true;
