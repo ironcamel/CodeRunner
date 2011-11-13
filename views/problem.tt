@@ -55,6 +55,8 @@
             Submit file
           </button>
           <button id="hide_btn" class="btn" type="button">Hide</button>
+          Currently supported languages are perl, python and ruby.
+          More to come soon.
         </div>
 
       </div>
