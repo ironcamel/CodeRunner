@@ -56,4 +56,12 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->has_many(
+  "attempts",
+  "CodeRunner::Schema::Result::Attempt",
+  { "foreign.problem" => "self.name" },
+  { cascade_copy => 0, cascade_delete => 1 },
+);
+
 1;

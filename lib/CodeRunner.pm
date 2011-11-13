@@ -204,8 +204,6 @@ get '/status/:run_id' => sub {
     return from_json cache_get param 'run_id';
 };
 
-#get '/config' => sub { return to_dumper config };
-
 post '/cb' => sub {
     my $run_id = param 'run_id';
     my $json = request->body;
