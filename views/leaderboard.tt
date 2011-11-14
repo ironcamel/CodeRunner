@@ -1,36 +1,34 @@
 
 <div class="page-header">
-  <h1>
-    Leaderboard
-  </h1>
+  <h1> Leaderboard </h1>
 </div>
 
-<!--
--->
 <div class="row">
-  <div class="span6">
+  <div class="span14">
 
-    <table class="zebra-striped">
-      <thead style="background: lightblue">
-        <tr>
-          <th style="width: 75px">Name</th>
-          <th style="width: 100px">Problems Solved</th>
-        </tr>
-      </thead>
+    <div class="span6">
+      <table class="zebra-striped">
+        <thead style="background: lightblue">
+          <tr>
+            <th style="width: 75px">Name</th>
+            <th style="width: 100px">Problems Solved</th>
+          </tr>
+        </thead>
 
-      <tbody>
-        [% FOR user IN leaders %]
-        <tr>
-          <td>
-          [% user.user_id %]
-          </td>
-          <td>
-          [% user.num_solved %]
-          </td>
-        </tr>
-        [% END %]
-      </tbody>
-    </table>
+        <tbody>
+          [% FOR user IN leaders %]
+          <tr>
+            <td>
+            [% user.user_id %]
+            </td>
+            <td>
+            [% user.num_solved %]
+            </td>
+          </tr>
+          [% END %]
+        </tbody>
+      </table>
+    </div>
 
   </div>
 </div>

@@ -168,7 +168,7 @@ function updateCaptcha(public_key) {
         <div class="container">
           <a class="brand" href="[% request.uri_base %]">CodeRunner</a>
           <ul class="nav">
-            <li [% active_nav ? '' : 'class="active"' %]>
+            <li [% active_nav == 'home' ? 'class="active"' : '' %]>
               <a href="[% request.uri_base %]">Home</a>
             </li>
             <li [% active_nav == 'rankings' ? 'class="active"' : '' %]>
@@ -179,7 +179,9 @@ function updateCaptcha(public_key) {
               <a href="[% request.uri_base %]/admin">Admin</a>
             </li>
           [% END %]
-            <li><a href="#about">About</a></li>
+            <li [% active_nav == 'help' ? 'class="active"' : '' %]>
+              <a href="[% request.uri_base %]/help">Help</a>
+            </li>
           </ul>
 
           [% IF user_id %]

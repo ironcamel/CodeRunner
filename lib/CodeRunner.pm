@@ -41,7 +41,8 @@ get '/' => sub {
     }
 
     template problems => {
-        problems => \@problems,
+        active_nav => 'home',
+        problems   => \@problems,
     };
 };
 
@@ -95,7 +96,7 @@ get '/logout' => sub {
 
 get '/admin' => sub { 
     return redirect uri_for '/' unless 'admin' eq session 'user_id';
-    template 'admin' => { active_nav => 'admin' };
+    template admin => { active_nav => 'admin' };
 };
 
 post '/add_problem' => sub {
@@ -194,6 +195,8 @@ post '/problems/:problem' => sub {
         problem  => $problem,
     };
 };
+
+get '/help' => sub { template help => { active_nav => 'help' } };
 
 get '/status/:run_id' => sub {
     return from_json cache_get param 'run_id';
