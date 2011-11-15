@@ -45,7 +45,11 @@ function validate_account() {
         account_error('The passwords do not match.')
         return false;
     }
-    if (email && ! /^.+@..+\...+/.test(email)) {
+    if (!email) {
+        account_error('An email address is required.')
+        return false;
+    }
+    if (! /^.+@..+\...+/.test(email)) {
         account_error('The email address is invalid.')
         return false;
     }
@@ -208,7 +212,7 @@ function updateCaptcha(public_key) {
                   </div>
                 </div>
                 <div class="clearfix">
-                  <label for="new_email">email: (optional)</label>
+                  <label for="new_email">email:</label>
                   <div class="input">
                     <input id="new_email" type="text" name="new_email"/>
                   </div>
