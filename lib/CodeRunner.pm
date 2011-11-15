@@ -24,7 +24,7 @@ get '/' => sub {
     my @problems;
     for my $path (glob config->{appdir} . '/problems/*.yml') {
         my $problem = LoadFile($path);
-        my($name, $dir, $suffix) = fileparse($path, '.yml', '.yaml');
+        my ($name, $dir, $suffix) = fileparse($path, '.yml');
         my $attempts = schema->resultset('Attempt')->search({
             problem => $problem->{title},
         })->count;
@@ -35,7 +35,7 @@ get '/' => sub {
         push @problems, {
             title    => $problem->{title},
             attempts => $attempts,
-            solved => $solved,
+            solved   => $solved,
             url      => uri_for("/problems/$name")
         };
     }
@@ -172,6 +172,7 @@ get '/problems/:problem/print-friendly' => sub {
 };
 
 post '/problems/:problem' => sub {
+    debug "handling post => ", request->path;
     my $problem = get_problem(param 'problem');
     my $file = upload 'code_file';
     my $run_id = int rand() * 1_000_000_000;
@@ -265,12 +266,13 @@ sub get_problem {
 sub guess_lang {
     my ($filename) = @_;
     given ($filename) {
-        when (/\.java$/) { return 'java' }
-        when (/\.pl$/  ) { return 'perl' }
+        when (/\.cpp$/ ) { return 'c++'    }
+        when (/\.java$/) { return 'java'   }
+        when (/\.pl$/  ) { return 'perl'   }
         when (/\.py$/  ) { return 'python' }
-        when (/\.rb$/  ) { return 'ruby' }
+        when (/\.rb$/  ) { return 'ruby'   }
     }
-    return 'c++';
+    return '';
 }
 
 sub check_captcha {
