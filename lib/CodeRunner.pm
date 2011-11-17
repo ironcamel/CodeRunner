@@ -9,6 +9,7 @@ use Dancer::Plugin::Passphrase;
 use Dancer::Plugin::Stomp;
 use DateTime;
 use File::Basename qw(fileparse);
+use Math::Random::Secure qw(irand);
 use YAML qw(LoadFile DumpFile Bless);
 
 # Automagically create db tables the first time this app is run
@@ -175,7 +176,7 @@ post '/problems/:problem' => sub {
     debug "handling post => ", request->path;
     my $problem = get_problem(param 'problem');
     my $file = upload 'code_file';
-    my $run_id = int rand() * 1_000_000_000;
+    my $run_id = irand(1_000_000_000);
     cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
         run_id   => $run_id,
