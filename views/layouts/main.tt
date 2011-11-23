@@ -7,9 +7,15 @@
     <meta name="author" content="">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js"></script>
-    <script src="http://twitter.github.com/bootstrap/1.3.0/bootstrap-dropdown.js"></script>
-    <script src="http://twitter.github.com/bootstrap/1.3.0/bootstrap-modal.js"></script>
-    <script type="text/javascript" src="http://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
+    <script src="[% request.uri_base %]/js/bootstrap/1.4.0/bootstrap-dropdown.js"></script>
+    <script src="[% request.uri_base %]/js/bootstrap/1.4.0/bootstrap-modal.js"></script>
+    <!--
+    <script src="http://twitter.github.com/bootstrap/1.4.0/bootstrap-dropdown.js"></script>
+    <script src="http://twitter.github.com/bootstrap/1.4.0/bootstrap-modal.js"></script>
+    -->
+  [% IF settings.captcha.enabled %]
+    <script type="text/javascript" src="https://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
+  [% END %]
 
 <script>
 
@@ -100,7 +106,10 @@ function updateCaptcha(public_key) {
     <![endif]-->
 
     <!-- Le styles -->
-    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.3.0/bootstrap.min.css">
+    <!-- 
+    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
+    -->
+    <link rel="stylesheet" href="[% request.uri_base %]/css/bootstrap/1.4.0/bootstrap.min.css">
     <style type="text/css">
       /* Override some defaults */
       html, body {
