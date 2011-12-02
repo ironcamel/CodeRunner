@@ -39,7 +39,8 @@ get '/' => sub {
 };
 
 get '/leaderboard' => sub {
-    #select user_id, count(distinct problem) from attempt where is_success=1 group by user_id;
+    #select user_id, count(distinct problem) from attempt
+    #    where is_success=1 group by user_id;
     my @attempts = schema->resultset('Attempt')->search(
         { is_success => 1 },
         {
@@ -175,9 +176,7 @@ post '/problems/:problem_id' => sub {
 
 get '/help' => sub { template help => { active_nav => 'help' } };
 
-get '/status/:run_id' => sub {
-    return from_json cache_get param 'run_id';
-};
+get '/status/:run_id' => sub { from_json cache_get param 'run_id' };
 
 post '/cb' => sub {
     my $run_id = param 'run_id';
