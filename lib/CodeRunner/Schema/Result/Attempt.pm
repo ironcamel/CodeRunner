@@ -85,7 +85,7 @@ Related object: L<CodeRunner::Schema::Result::Problem>
 __PACKAGE__->belongs_to(
   "problem",
   "CodeRunner::Schema::Result::Problem",
-  { name => "problem" },
+  { title => "problem" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -105,8 +105,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-12 09:11:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:01bVlSOA9bJYSReg2+iskg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-02 18:48:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:m5vbAePkzWcAfgh6G/EcKw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

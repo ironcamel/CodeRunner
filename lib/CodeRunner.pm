@@ -8,9 +8,7 @@ use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Passphrase;
 use Dancer::Plugin::Stomp;
 use DateTime;
-use File::Basename qw(fileparse);
 use Math::Random::Secure qw(irand);
-use YAML qw(LoadFile DumpFile Bless);
 
 # Automagically create db tables the first time this app is run
 eval { schema->resultset('User')->count };
@@ -23,21 +21,14 @@ hook before_template_render => sub {
 
 get '/' => sub {
     my @problems;
-    for my $path (glob config->{appdir} . '/problems/*.yml') {
-        my $problem = LoadFile($path);
-        my ($name, $dir, $suffix) = fileparse($path, '.yml');
-        my $attempts = schema->resultset('Attempt')->search({
-            problem => $problem->{title},
-        })->count;
-        my $solved = schema->resultset('Attempt')->search({
-            problem    => $problem->{title},
-            is_success => 1,
-        })->count;
+    for my $problem (schema->resultset('Problem')->all) {
+        my $attempts = $problem->attempts->count;
+        my $solved = $problem->attempts->search({ is_success => 1 })->count;
         push @problems, {
-            title    => $problem->{title},
+            title    => $problem->title,
             attempts => $attempts,
             solved   => $solved,
-            url      => uri_for("/problems/$name")
+            url      => uri_for("/problems/" . $problem->id)
         };
     }
 
@@ -103,16 +94,15 @@ get '/admin' => sub {
 post '/add_problem' => sub {
     
     if (config->{captcha}{enabled}) {
-        return { captcha_failure => 1 }
-            unless check_captcha(
-                param('captcha_challenge'),
-                param('captcha_response'),
-                param('remote_address'));
+        return { captcha_failure => 1 } unless check_captcha(
+            param('captcha_challenge'),
+            param('captcha_response'),
+            param('remote_address'));
     }
 
     my $prob_name = param 'problem_title';
     $prob_name =~ s/\s/-/g;
-    my $problem_data = {
+    my %problem_data = (
         title         => param('problem_title'),
         description   => param('problem_desc'),
         input_desc    => param('problem_input_desc'),
@@ -121,60 +111,45 @@ post '/add_problem' => sub {
         sample_output => param('problem_sample_output'),
         input         => param('problem_input'),
         output        => param('problem_output'),
-    };
-    local $YAML::UseHeader = 0;
-    local $YAML::CompressSeries = 0;
-    Bless($problem_data)->keys([qw(title description input_desc output_desc
-        sample_input sample_output input output)]);
-    my $filepath = config->{appdir} . "/problems/$prob_name.yml";
-    if (-e $filepath){
-        return {err_msg => 'A Problem with that title already exists'};
-    }
-    DumpFile($filepath, $problem_data);
+    );
 
-    my $problem = { name => $problem_data->{title} };
-    debug "Creating new problem: ", $problem;
-    eval { schema->resultset('Problem')->create($problem) };
+    # Make sure input and output fields end with a newline
+    foreach (@problem_data{qw(input output)}) { chomp; $_ .= "\n" };
+
+    my $title = $problem_data{title};
+    debug "Creating new problem: $title";
+    my $prob_row = eval {schema->resultset('Problem')->create(\%problem_data)};
     if ($@) {
-        error $@;
-        return { err_msg =>  "The problem '$problem' is already taken." }
-            if $@ =~ /column id is not unique/;
-        return { err_msg => "Could not create problem '$problem': $@." };
+        error "Failed to create new problem: $@";
+        return { err_msg =>  "The problem '$title' is already taken." }
+            if $@ =~ /column .* is not unique/;
+        return { err_msg => "Could not create problem '$title': $@." };
     }
 
-    return { problem_url => uri_for("/problems/$prob_name")->as_string() };
-
+    return { problem_url => uri_for("/problems/") . $prob_row->id };
 };
 
-get '/problems/:problem' => sub {
+get '/problems/:problem_id' => sub {
     template problem => {
-        problem => get_problem(param 'problem'),
+        problem => get_problem(),
     };
 };
 
-del '/problems/:problem' => sub {
-    my $prob_name = param 'problem';
-    my $problem = get_problem($prob_name); 
-    my $filepath = config->{appdir} . "/problems/$prob_name.yml";
-    if (-e $filepath) {
-        return { err_msg => "yml file for $prob_name could not be deleted" }
-            unless unlink $filepath;
-    }
-    schema->resultset('Problem')->search({ name => $problem->{title} })
-          ->delete_all();
+del '/problems/:problem_id' => sub {
+    my $id = param 'problem_id';
+    schema->resultset('Problem')->find($id)->delete();
     return {};
 };
 
-get '/problems/:problem/print-friendly' => sub {
-    set layout => 'print_friendly';
+get '/problems/:problem_id/print-friendly' => sub {
     template problem => {
-        problem => get_problem(param 'problem'),
-    };
+        problem => get_problem(),
+    }, { layout => 'print_friendly' };
 };
 
-post '/problems/:problem' => sub {
+post '/problems/:problem_id' => sub {
     debug "handling post => ", request->path;
-    my $problem = get_problem(param 'problem');
+    my $problem = get_problem();
     my $file = upload 'code_file';
     my $run_id = irand(1_000_000_000);
     cache_set $run_id => to_json({status => -1});
@@ -182,8 +157,8 @@ post '/problems/:problem' => sub {
         run_id   => $run_id,
         user_id  => session('user_id'),
         code     => $file->content,
-        language => param('language') || guess_lang($file->basename),
-        problem  => $problem,
+        language => guess_lang($file->basename),
+        problem  => { $problem->get_columns },
         cb_url   => uri_for('/cb')->as_string,
         remote   => request->remote_address,
     }, { utf8 => 1 });
@@ -259,10 +234,7 @@ post '/ajax/users' => sub {
     return { is_success => 1 };
 };
 
-sub get_problem {
-    my ($prob_name) = @_;
-    return LoadFile(config->{appdir} . "/problems/$prob_name.yml");
-}
+sub get_problem { schema->resultset('Problem')->find(param 'problem_title') }
 
 sub guess_lang {
     my ($filename) = @_;
