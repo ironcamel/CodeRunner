@@ -57,25 +57,28 @@ $stomp->disconnect;
 sub validate {
     my ($data) = @_;
     log_msg($data);
+    my $lang = $data->{language};
     die "Language not supported yet.\n"
-        unless $data->{language} ~~ [qw(perl python ruby)];
+        unless $lang ~~ [qw(perl python ruby java)];
     my $problem = $data->{problem};
-    my $input = $problem->{input};
-    my $reason = '';
+    my $out = run_code($lang, $data->{code}, $problem->{input});
+    my $status = $out eq $problem->{output} ? 1 : 0;
+    my $reason = $status == 1 ? '' : 'Wrong answer.';
+    post_result($status, $reason, $data);
+}
+
+sub run_code {
+    my ($lang, $code, $input) = @_;
     say "going to run code ...";
+    my ($out, $err) = ('', '');
     my $tmp = File::Temp->new();
-    print $tmp $data->{code};
-    my ($out, $err);
+    print $tmp $code;
     try {
-        run([ $data->{language}, "$tmp" ], \$input, \$out, \$err,
-            timeout(3));
+        run([ $lang, "$tmp" ], \$input, \$out, \$err, timeout(3));
     } catch {
         die "Took too long\n";
-    }
-    $out ||= '';
-    my $status = $out eq $problem->{output} ? 1 : 0;
-    $reason = "Wrong answer." unless $status;
-    post_result($status, $reason, $data);
+    };
+    return $out;
 }
 
 sub post_result {
@@ -89,14 +92,14 @@ sub post_result {
         problem => $data->{problem}{title},
     };
     dd $result;
-    debug(dump($result));
+    debug($result);
     $AGENT->post($data->{cb_url}, content_type => 'application/json',
         Content => encode_json($result));
 }
 
 sub debug {
     print $LOG '[' . localtime . '] (DEBUG) ';
-    say $LOG @_;
+    say $LOG dump(@_);
     $LOG->flush;
 }
 
@@ -104,5 +107,5 @@ sub log_msg {
     my $data = shift;
     my %copy = %$data;
     $copy{problem} = $copy{problem}{title};
-    debug(dump(\%copy))
+    debug(\%copy)
 }
