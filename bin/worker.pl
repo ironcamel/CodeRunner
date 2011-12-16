@@ -58,23 +58,42 @@ sub validate {
     my ($data) = @_;
     log_msg($data);
     my $lang = $data->{language};
-    die "Language not supported yet.\n"
-        unless $lang ~~ [qw(perl python ruby java)];
     my $problem = $data->{problem};
-    my $out = run_code($lang, $data->{code}, $problem->{input});
+    my $out = run_code(
+        $lang, $data->{code}, $data->{file_name}, $problem->{input});
     my $status = $out eq $problem->{output} ? 1 : 0;
-    my $reason = $status == 1 ? '' : 'Wrong answer.';
+    my $reason = $status == 1 ? 'Success' : 'Wrong answer';
     post_result($status, $reason, $data);
 }
 
 sub run_code {
-    my ($lang, $code, $input) = @_;
+    my ($lang, $code, $file_name, $input) = @_;
     say "going to run code ...";
     my ($out, $err) = ('', '');
-    my $tmp = File::Temp->new();
-    print $tmp $code;
+    my @cmd;
+    
+    my $tmpdir = File::Temp->newdir();
+    my $tmpfile = File::Temp->new();
+    given ($lang) {
+        when ('java') {
+            my $class_name = (split /\./, $file_name)[0];
+            my $path = "$tmpdir/$file_name";
+            open my $java_file, '>', $path;
+            print $java_file $code;
+            run([ 'javac', "$path" ]) or die "Failed to compile java code";
+            @cmd = ($lang, -classpath => "$tmpdir", $class_name);
+        }
+        when ([qw(perl python java)]) {
+            print $tmpfile $code;
+            @cmd =($lang, "$tmpfile");
+        }
+        default {
+            die "Language [$lang] is not supported yet\n";
+        }
+    }
     try {
-        run([ $lang, "$tmp" ], \$input, \$out, \$err, timeout(3));
+        debug("going to run code: @cmd");
+        run(\@cmd, \$input, \$out, \$err, timeout(3));
     } catch {
         die "Took too long\n";
     };
