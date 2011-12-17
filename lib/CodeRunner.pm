@@ -239,7 +239,7 @@ sub get_problem { schema->resultset('Problem')->find(param 'problem_id') }
 sub guess_lang {
     my ($filename) = @_;
     my $ext = (split /\./, $filename)[-1];
-    given ($filename) {
+    given ($ext) {
         when ([qw(c cc cpp cxx C)]) { return 'c++' }
         when ('java') { return 'java'   }
         when ('pl'  ) { return 'perl'   }
