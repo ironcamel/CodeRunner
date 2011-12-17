@@ -57,25 +57,47 @@ $stomp->disconnect;
 sub validate {
     my ($data) = @_;
     log_msg($data);
-    die "Language not supported yet.\n"
-        unless $data->{language} ~~ [qw(perl python ruby)];
+    my $lang = $data->{language};
     my $problem = $data->{problem};
-    my $input = $problem->{input};
-    my $reason = '';
+    my $out = run_code(
+        $lang, $data->{code}, $data->{file_name}, $problem->{input});
+    my $status = $out eq $problem->{output} ? 1 : 0;
+    my $reason = $status == 1 ? 'Success' : 'Wrong answer';
+    post_result($status, $reason, $data);
+}
+
+sub run_code {
+    my ($lang, $code, $file_name, $input) = @_;
     say "going to run code ...";
-    my $tmp = File::Temp->new();
-    print $tmp $data->{code};
-    my ($out, $err);
+    my ($out, $err) = ('', '');
+    my @cmd;
+    
+    my $tmpdir = File::Temp->newdir();
+    my $tmpfile = File::Temp->new();
+    given ($lang) {
+        when ('java') {
+            my $class_name = (split /\./, $file_name)[0];
+            my $path = "$tmpdir/$file_name";
+            open my $java_file, '>', $path;
+            print $java_file $code;
+            run([ 'javac', "$path" ]) or die "Failed to compile java code";
+            @cmd = ($lang, -classpath => "$tmpdir", $class_name);
+        }
+        when ([qw(perl python java)]) {
+            print $tmpfile $code;
+            @cmd =($lang, "$tmpfile");
+        }
+        default {
+            die "Language [$lang] is not supported yet\n";
+        }
+    }
     try {
-        run([ $data->{language}, "$tmp" ], \$input, \$out, \$err,
-            timeout(3));
+        debug("going to run code: @cmd");
+        run(\@cmd, \$input, \$out, \$err, timeout(3));
     } catch {
         die "Took too long\n";
-    }
-    $out ||= '';
-    my $status = $out eq $problem->{output} ? 1 : 0;
-    $reason = "Wrong answer." unless $status;
-    post_result($status, $reason, $data);
+    };
+    return $out;
 }
 
 sub post_result {
@@ -89,14 +111,14 @@ sub post_result {
         problem => $data->{problem}{title},
     };
     dd $result;
-    debug(dump($result));
+    debug($result);
     $AGENT->post($data->{cb_url}, content_type => 'application/json',
         Content => encode_json($result));
 }
 
 sub debug {
     print $LOG '[' . localtime . '] (DEBUG) ';
-    say $LOG @_;
+    say $LOG dump(@_);
     $LOG->flush;
 }
 
@@ -104,5 +126,5 @@ sub log_msg {
     my $data = shift;
     my %copy = %$data;
     $copy{problem} = $copy{problem}{title};
-    debug(dump(\%copy))
+    debug(\%copy)
 }
