@@ -83,6 +83,14 @@ sub run_code {
             run([ 'javac', "$path" ]) or die "Failed to compile java code";
             @cmd = ($lang, -classpath => "$tmpdir", $class_name);
         }
+        when ('c++') {
+            my $path = "$tmpdir/foo.cpp";
+            open my $c_file, '>', $path;
+            print $c_file $code;
+            run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
+                or die "Failed to compile c/c++ code";
+            @cmd = ("$tmpdir/foo");
+        }
         when ([qw(perl python java)]) {
             print $tmpfile $code;
             @cmd =($lang, "$tmpfile");
