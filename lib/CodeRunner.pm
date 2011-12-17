@@ -155,13 +155,14 @@ post '/problems/:problem_id' => sub {
     my $run_id = irand(1_000_000_000);
     cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
-        run_id   => $run_id,
-        user_id  => session('user_id'),
-        code     => $file->content,
-        language => guess_lang($file->basename),
-        problem  => { $problem->get_columns },
-        cb_url   => uri_for('/cb')->as_string,
-        remote   => request->remote_address,
+        run_id    => $run_id,
+        user_id   => session('user_id'),
+        code      => $file->content,
+        file_name => $file->basename,
+        language  => guess_lang($file->basename),
+        problem   => { $problem->get_columns },
+        cb_url    => uri_for('/cb')->as_string,
+        remote    => request->remote_address,
     }, { utf8 => 1 });
     stomp->send({
         destination => config->{queue},
@@ -233,16 +234,17 @@ post '/ajax/users' => sub {
     return { is_success => 1 };
 };
 
-sub get_problem { schema->resultset('Problem')->find(param 'problem_title') }
+sub get_problem { schema->resultset('Problem')->find(param 'problem_id') }
 
 sub guess_lang {
     my ($filename) = @_;
+    my $ext = (split /\./, $filename)[-1];
     given ($filename) {
-        when (/\.cpp$/ ) { return 'c++'    }
-        when (/\.java$/) { return 'java'   }
-        when (/\.pl$/  ) { return 'perl'   }
-        when (/\.py$/  ) { return 'python' }
-        when (/\.rb$/  ) { return 'ruby'   }
+        when ([qw(c cc cpp cxx C)]) { return 'c++' }
+        when ('java') { return 'java'   }
+        when ('pl'  ) { return 'perl'   }
+        when ('py'  ) { return 'python' }
+        when ('rb'  ) { return 'ruby'   }
     }
     return '';
 }
