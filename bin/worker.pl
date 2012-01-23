@@ -15,7 +15,7 @@ use YAML qw(LoadFile);
 
 my $CONFIG = LoadFile("$RealBin/../config.yml");
 my $AGENT = LWP::UserAgent->new();
-my $log_path = "coderunner-worker.log";
+my $log_path = "/tmp/coderunner-worker.log";
 my $LOG = IO::File->new($log_path, 'a')
     or die "Could not open $log_path : $!\n";
 
@@ -34,6 +34,7 @@ $SIG{INT} = sub {
     say 'goodbye';
     exit;
 };
+$SIG{PIPE} = 'IGNORE';
 
 while (1) {
     my $frame = $stomp->receive_frame;
@@ -44,8 +45,7 @@ while (1) {
         $data = decode_json($msg);
         validate($data);
     } catch {
-        chomp;
-        say "failed: $_";
+        debug("failed to process msg: $_");
         post_result(0, $_, $data);
     };
     $stomp->ack({ frame => $frame });
