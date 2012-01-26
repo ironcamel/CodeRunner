@@ -10,6 +10,7 @@ use IPC::Run qw(run timeout);
 use JSON qw(decode_json encode_json);
 use LWP::UserAgent;
 use Net::Stomp;
+use POSIX qw(setgid);
 use Try::Tiny;
 use YAML qw(LoadFile);
 
@@ -68,44 +69,80 @@ sub validate {
 
 sub run_code {
     my ($lang, $code, $file_name, $input) = @_;
-    say "going to run code ...";
-    my ($out, $err) = ('', '');
-    my @cmd;
-    
-    my $tmpdir = File::Temp->newdir();
-    my $tmpfile = File::Temp->new();
-    given ($lang) {
-        when ('java') {
-            my $class_name = (split /\./, $file_name)[0];
-            my $path = "$tmpdir/$file_name";
-            open my $java_file, '>', $path;
-            print $java_file $code;
-            run([ 'javac', "$path" ]) or die "Failed to compile java code";
-            @cmd = ($lang, -classpath => "$tmpdir", $class_name);
+    debug("going to run code ...");
+
+    my $jail = '/var/chroot1';
+    my $cmd = "rm -rf $jail";
+    debug($cmd);
+    system $cmd;
+
+    $cmd = "tar -xf $jail.tar -C /var";
+    debug($cmd);
+    die "Could not build chroot jail: $!" unless system($cmd) == 0;
+
+    chdir $jail or die "Failed to chdir into $jail: $!";
+
+    my $pid = open my $child_process, '-|';
+    if (!$pid) { # child process code starts here
+
+        debug("chroot $jail");
+        chroot $jail or die "could not chroot: $!";
+
+        # drop root privileges
+        my $new_uid = getpwnam('coderunner');
+        unless (defined $new_uid) {
+            say "Can't find uid for 'coderunner'";
+            exit 1;
         }
-        when ('c++') {
-            my $path = "$tmpdir/foo.cpp";
-            open my $c_file, '>', $path;
-            print $c_file $code;
-            run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
-                or die "Failed to compile c/c++ code";
-            @cmd = ("$tmpdir/foo");
+        $< = $> = $new_uid;
+        setgid($new_uid);
+
+        my ($out, $err, @cmd) = ('', '');
+        my $tmpdir = File::Temp->newdir();
+        my $tmpfile = File::Temp->new();
+        given ($lang) {
+            when ('java') {
+                my $class_name = (split /\./, $file_name)[0];
+                my $path = "$tmpdir/$file_name";
+                open my $java_file, '>', $path;
+                print $java_file $code;
+                run([ 'javac', "$path" ]) or die "Failed to compile java code";
+                @cmd = ($lang, -classpath => "$tmpdir", $class_name);
+            }
+            when ('c++') {
+                my $path = "$tmpdir/foo.cpp";
+                open my $c_file, '>', $path;
+                print $c_file $code;
+                run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
+                    or die "Failed to compile c/c++ code";
+                @cmd = ("$tmpdir/foo");
+            }
+            when ([qw(perl python java)]) {
+                print $tmpfile $code;
+                @cmd =($lang, "$tmpfile");
+            }
+            default {
+                die "Language [$lang] is not supported yet\n";
+            }
         }
-        when ([qw(perl python java)]) {
-            print $tmpfile $code;
-            @cmd =($lang, "$tmpfile");
-        }
-        default {
-            die "Language [$lang] is not supported yet\n";
-        }
+
+        debug("going to run: @cmd");
+        try {
+            run(\@cmd, \$input, \$out, \$err, timeout(3));
+        } catch {
+            print "Took too long\n";
+        };
+        print $out;
+        exit;
     }
-    try {
-        debug("going to run code: @cmd");
-        run(\@cmd, \$input, \$out, \$err, timeout(3));
-    } catch {
-        die "Took too long\n";
-    };
-    return $out;
+
+    # parent process
+
+    my @out = <$child_process>;
+    close $child_process;
+    my $result = join '', @out;
+    debug('output: ' . substr $result, 0, 100);
+    return $result;
 }
 
 sub post_result {
