@@ -130,16 +130,23 @@ post '/add_problem' => sub {
     return { problem_url => uri_for("/problems/") . $prob_row->id };
 };
 
-get '/problems/:problem_id' => sub {
-    template problem => {
-        problem => get_problem(),
-    };
+post '/ajax/edit_problem' => sub {
+    my $problem = get_problem()
+        or return { err_msg => 'No such problem' };
+    $problem->update({ param('section') => param('value') });
+    return {};
 };
 
-del '/problems/:problem_id' => sub {
-    my $id = param 'problem_id';
-    schema->resultset('Problem')->find($id)->delete();
+del '/ajax/problems/:problem_id' => sub {
+    get_problem()->delete();
     return {};
+};
+
+get '/problems/:problem_id' => sub {
+    my $template = is_admin() ? 'problem_edit' : 'problem';
+    template $template => {
+        problem => get_problem(),
+    };
 };
 
 get '/problems/:problem_id/print-friendly' => sub {
@@ -256,6 +263,11 @@ sub check_captcha {
         $remote_address, $challenge, $response);
     #my $error = $result->{error};
     return $result->{is_valid};
+}
+
+sub is_admin {
+    my $user_id = session('user_id') || '';
+    return $user_id eq 'admin';
 }
 
 true;

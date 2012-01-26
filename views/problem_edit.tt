@@ -1,0 +1,108 @@
+
+<div class="page-header">
+  <h1>
+    [% problem.title %]
+    <button target="_blank" id="delete_problem_btn"
+            class="btn pull-right">Delete Problem</button>
+  </h1>
+</div>
+
+    <h3>
+    Description
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_description"
+                class="span14">[% problem.description %]</textarea>
+      <button id="save_description" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Input
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_input_desc"
+                class="span14">[% problem.input_desc %]</textarea>
+      <button id="save_input_desc" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Output
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_output_desc"
+                class="span14">[% problem.output_desc %]</textarea>
+      <button id="save_output_desc" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Sample Input
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_sample_input"
+                class="span14">[% problem.sample_input %]</textarea>
+      <button id="save_sample_input" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Sample Output
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_sample_output"
+                class="span14">[% problem.sample_output %]</textarea>
+      <button id="save_sample_output" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Actual Input
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_input"
+                class="span14">[% problem.input %]</textarea>
+      <button id="save_input" class="btn">Save</button>
+    </p>
+
+    <h3>
+    Actual Output
+    </h3>
+
+    <p class="problem_edit_section">
+      <textarea id="problem_output"
+                class="span14">[% problem.output %]</textarea>
+      <button id="save_output" class="btn">Save</button>
+    </p>
+
+<script type="text/javascript" charset="utf-8">
+
+function update_problem(section) {
+    $.ajax({
+        url: '[% request.uri_base %]/ajax/edit_problem',
+        type: 'POST',
+        data: {
+            problem_id: '[% problem.id %]',
+            section:    section,
+            value:      $('#problem_' + section).val(),
+        },
+        success: function(data) {
+            if (data.err_msg) {
+                alert('Error: ' + data.err_msg);
+            } else {
+                alert('Successfully saved');
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            alert('oops: ' + textStatus + ' ' + errorThrown);
+        },
+    });
+}
+$('.problem_edit_section button').click(function() {
+    var section = this.id.split('save_')[1];
+    update_problem(section);
+});
+
+</script>

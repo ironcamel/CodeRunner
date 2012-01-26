@@ -160,12 +160,10 @@ $('#submit_btn').click(function() {
         function(data) {
             if (data.err_msg) {
                 alert(data.err_msg);
-            }
-            else if(data.captcha_failure){
+            } else if(data.captcha_failure) {
                 alert("Incorrect Captcha");
                 updateCaptcha('[% settings.captcha.public_key %]');
-            }
-            else {
+            } else {
                 $('#new-problem-link').attr('href', data.problem_url);
                 $('#problem-added-modal').modal('show');
             }
