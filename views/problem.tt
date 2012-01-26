@@ -7,8 +7,8 @@
   id="print_friendly_btn" class="btn pull-right">Printer Friendly</a>
 
     [% IF session.user_id == 'admin' %]
-    <button target="_blank"
-  id="delete_problem_btn" class="btn pull-right">Delete Problem</button>
+    <button target="_blank" id="delete_problem_btn"
+            class="btn pull-right">Delete Problem</button>
     [% END %]
   </h1>
 </div>
@@ -77,18 +77,22 @@ $('#hide_btn').click(function() {
 [% IF session.user_id == 'admin' %]
 $('#delete_problem_btn').click(function() {
     var answer = confirm('Are you sure you want to delete this problem?');
-    if(answer){
-          $.ajax({url: '[% request.path %]',
-                  type: 'DELETE',
-                  success: function(data) {
-                      if (data.err_msg) {
-                        alert(data.err_msg);
-                      }
-                      else {
-                        alert("Problem Deleted");
-                        window.location = '[% request.uri_base %]';
-                      }
-        }});
+    if(answer) {
+        $.ajax({
+            url: '[% request.path %]',
+            type: 'DELETE',
+            success: function(data) {
+                if (data.err_msg) {
+                    alert(data.err_msg);
+                } else {
+                    alert("Problem Deleted");
+                    window.location = '[% request.uri_base %]';
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alert('oops: ' + textStatus + ' ' + errorThrown);
+            },
+        });
     }
 });
 [% END %]
@@ -101,7 +105,8 @@ var t_id = window.setInterval(function() {
         if (++poll_count > 10) {
             window.clearInterval(t_id);
             $('#error_msg p span').html(
-                'Sorry, we are having technical difficulties.');
+                'Sorry, we are having technical difficulties.'
+                + ' Please try again later.');
             $('#error_msg').show();
             return;
         }
