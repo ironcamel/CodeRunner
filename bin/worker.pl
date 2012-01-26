@@ -83,7 +83,7 @@ sub run_code {
     chdir $jail or die "Failed to chdir into $jail: $!";
 
     my $pid = open my $child_process, '-|';
-    if (!$pid) { # child process code starts here
+    if (!$pid) { # child process starts here
 
         debug("chroot $jail");
         chroot $jail or die "could not chroot: $!";
@@ -134,14 +134,19 @@ sub run_code {
         };
         print $out;
         exit;
-    }
+    } # end of child process
 
-    # parent process
-
+    # Read output from the child process
     my @out = <$child_process>;
     close $child_process;
     my $result = join '', @out;
     debug('output: ' . substr $result, 0, 100);
+
+    # Lets clean up after ourselves.
+    $cmd = "rm -rf $jail";
+    debug($cmd);
+    system $cmd;
+
     return $result;
 }
 
