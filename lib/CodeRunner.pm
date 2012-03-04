@@ -143,6 +143,7 @@ del '/ajax/problems/:problem_id' => sub {
 };
 
 get '/problems/:problem_id' => sub {
+    debug '*** getting problem ' . param 'problem_id';
     my $template = is_admin() ? 'problem_edit' : 'problem';
     template $template => {
         problem => get_problem(),
@@ -160,6 +161,7 @@ post '/problems/:problem_id' => sub {
     my $problem = get_problem();
     my $file = upload 'code_file';
     my $run_id = irand(1_000_000_000);
+    debug "created random run_id: $run_id";
     cache_set $run_id => to_json({status => -1});
     my $msg = to_json({
         run_id    => $run_id,
@@ -171,10 +173,11 @@ post '/problems/:problem_id' => sub {
         cb_url    => uri_for('/cb')->as_string,
         remote    => request->remote_address,
     }, { utf8 => 1 });
-    stomp->send({
+    stomp_send {
         destination => config->{queue},
         body        => $msg,
-    });
+        persistent  => 'true',
+    };
     template problem => {
         is_running => 1,
         run_id   => $run_id,
@@ -188,6 +191,8 @@ get '/status/:run_id' => sub { from_json cache_get param 'run_id' };
 
 post '/cb' => sub {
     my $run_id = param 'run_id';
+    return unless $run_id;
+
     my $json = request->body;
     cache_set $run_id => $json;
 
@@ -196,7 +201,7 @@ post '/cb' => sub {
     my $user_id = $data->{user_id};
     return unless $user_id;
     my $user = schema->resultset('User')->find($user_id);
-    return unless $user_id;
+    return unless $user;
 
     $user->add_to_attempts({
         problem    => $data->{problem},

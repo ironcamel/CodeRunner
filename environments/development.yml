@@ -1,16 +1,13 @@
 # configuration file for development environment
 
-# the logger engine to use
-# console: log messages to STDOUT (your console where you started the
-#          application server)
-# file:    log message to a file in log/
-logger: "console"
+logger: console
+#logger: file
 
 # the log level for this environement
-# core is the lowest, it shows Dancer's core log messages as well as yours
-# (debug, warning and error)
-#log: "core"
-log: "debug"
+# core is the lowest, it shows Dancer's core log messages as well as 
+# debug, warning and error
+#log: core
+log: debug
 
 # should Dancer consider warnings as critical errors?
 warnings: 1
