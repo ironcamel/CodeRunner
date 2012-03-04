@@ -9,7 +9,7 @@ use IO::File;
 use IPC::Run qw(run timeout);
 use JSON qw(decode_json encode_json);
 use LWP::UserAgent;
-use Net::Stomp;
+use Net::STOMP::Client;
 use POSIX qw(setgid);
 use Try::Tiny;
 use YAML qw(LoadFile);
@@ -20,15 +20,13 @@ my $log_path = "/tmp/coderunner-worker.log";
 my $LOG = IO::File->new($log_path, 'a')
     or die "Could not open $log_path : $!\n";
 
-my $stomp = Net::Stomp->new({
-    hostname => $CONFIG->{plugins}{Stomp}{default}{hostname},
-    port     => $CONFIG->{plugins}{Stomp}{default}{port},
-});
+my $stomp = Net::STOMP::Client->new(
+    host => $CONFIG->{plugins}{Stomp}{default}{hostname},
+    port => $CONFIG->{plugins}{Stomp}{default}{port},
+);
+$stomp->message_callback(sub { return 1 });
 $stomp->connect();
-$stomp->subscribe({
-    destination => $CONFIG->{queue},
-    ack         => 'client',
-});
+$stomp->subscribe(destination => $CONFIG->{queue}, ack => 'client');
 
 $SIG{INT} = sub {
     $stomp->disconnect;
@@ -38,7 +36,7 @@ $SIG{INT} = sub {
 $SIG{PIPE} = 'IGNORE';
 
 while (1) {
-    my $frame = $stomp->receive_frame;
+    my $frame = $stomp->wait_for_frames();
     my $msg = $frame->body;
     my $data;
     say "processing msg ...";
@@ -49,7 +47,7 @@ while (1) {
         debug("failed to process msg: $_");
         post_result(0, $_, $data);
     };
-    $stomp->ack({ frame => $frame });
+    $stomp->ack(frame => $frame);
 }
 $stomp->disconnect;
 
