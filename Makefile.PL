@@ -21,6 +21,8 @@ WriteMakefile(
         'DateTime'                   => '0',
         'IPC::Run'                   => '0',
         'JSON'                       => '0',
+        # Need this and libssl-dev for https support
+        #'LWP::Protocol::https'       => '0',
         'LWP::UserAgent'             => '0',
         'Math::Random::Secure'       => '0',
         'Net::STOMP::Client'         => '0',
