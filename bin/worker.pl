@@ -15,7 +15,7 @@ use Try::Tiny;
 use YAML qw(LoadFile);
 
 my $CONFIG = LoadFile("$RealBin/../config.yml");
-my $AGENT = LWP::UserAgent->new();
+my $AGENT = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
 my $log_path = "/tmp/coderunner-worker.log";
 my $LOG = IO::File->new($log_path, 'a')
     or die "Could not open $log_path : $!\n";
@@ -160,8 +160,10 @@ sub post_result {
     };
     dd $result;
     debug($result);
-    $AGENT->post($data->{cb_url}, content_type => 'application/json',
-        Content => encode_json($result));
+    debug("going to post result to callback url: $data->{cb_url}");
+    my $res = $AGENT->post($data->{cb_url}, content_type => 'application/json',
+        content => encode_json($result));
+    debug($res->status_line);
 }
 
 sub debug {
