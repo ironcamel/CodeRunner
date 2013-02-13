@@ -209,6 +209,7 @@ post '/cb' => sub {
         time_of    => DateTime->now,
         is_success => $data->{status},
     });
+    return;
 };
 
 post '/ajax/users' => sub {

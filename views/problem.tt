@@ -102,7 +102,7 @@ var poll_count = 0;
 var run_id = '[% run_id %]';
 var t_id = window.setInterval(function() {
     $.get('[% request.uri_base %]/status/[% run_id %]', function(data) {
-        if (++poll_count > 10) {
+        if (++poll_count > 20) {
             window.clearInterval(t_id);
             $('#error_msg p span').html(
                 'Sorry, we are having technical difficulties.'
