@@ -116,12 +116,15 @@ var t_id = window.setInterval(function() {
         if (data.status == -1) // Still running
             return;
         if (data.status == 1) {
-            $('#success_msg').show();
             window.clearInterval(t_id);
+            $('#success_msg').show();
+            $('#error_msg').hide();
+            $('#running_msg').hide();
         } else {
+            window.clearInterval(t_id);
             $('#error_msg p span').html(data.reason);
             $('#error_msg').show();
-            window.clearInterval(t_id);
+            $('#running_msg').hide();
         }
     });
 }, 1000);
