@@ -22,7 +22,8 @@ my $LOG = IO::File->new($log_path, 'a')
 
 my $stomp = Net::Stomp->new({
     hostname => $CONFIG->{plugins}{Stomp}{default}{hostname},
-    port => $CONFIG->{plugins}{Stomp}{default}{port},
+    port     => $CONFIG->{plugins}{Stomp}{default}{port},
+    reconnect_on_fork => 0,
 });
 $stomp->connect();
 $stomp->subscribe({ destination => $CONFIG->{queue}, ack => 'client' });
