@@ -9,7 +9,7 @@ use IO::File;
 use IPC::Run qw(run timeout);
 use JSON qw(decode_json encode_json);
 use LWP::UserAgent;
-use Net::STOMP::Client;
+use Net::Stomp;
 use POSIX qw(setgid);
 use Try::Tiny;
 use YAML qw(LoadFile);
@@ -20,13 +20,12 @@ my $log_path = "/tmp/coderunner-worker.log";
 my $LOG = IO::File->new($log_path, 'a')
     or die "Could not open $log_path : $!\n";
 
-my $stomp = Net::STOMP::Client->new(
-    host => $CONFIG->{plugins}{Stomp}{default}{hostname},
+my $stomp = Net::Stomp->new({
+    hostname => $CONFIG->{plugins}{Stomp}{default}{hostname},
     port => $CONFIG->{plugins}{Stomp}{default}{port},
-);
-$stomp->message_callback(sub { return 1 });
+});
 $stomp->connect();
-$stomp->subscribe(destination => $CONFIG->{queue}, ack => 'client');
+$stomp->subscribe({ destination => $CONFIG->{queue}, ack => 'client' });
 
 $SIG{INT} = sub {
     $stomp->disconnect;
@@ -35,8 +34,9 @@ $SIG{INT} = sub {
 };
 $SIG{PIPE} = 'IGNORE';
 
+say "worker is starting";
 while (1) {
-    my $frame = $stomp->wait_for_frames();
+    my $frame = $stomp->receive_frame;
     my $msg = $frame->body;
     my $data;
     say "processing msg ...";
@@ -46,8 +46,9 @@ while (1) {
     } catch {
         debug("failed to process msg: $_");
         post_result(0, $_, $data);
+    } finally {
+        $stomp->ack({ frame => $frame });
     };
-    $stomp->ack(frame => $frame);
 }
 $stomp->disconnect;
 
@@ -67,8 +68,8 @@ sub validate {
 
 sub run_code {
     my ($lang, $code, $file_name, $input) = @_;
-    debug("going to run code ...");
 
+    debug("Setting up chroot ...");
     my $jail = '/var/chroot1';
     my $cmd = "rm -rf $jail";
     debug($cmd);
@@ -141,9 +142,9 @@ sub run_code {
     debug('output: ' . substr $result, 0, 100);
 
     # Lets clean up after ourselves.
-    $cmd = "rm -rf $jail";
-    debug($cmd);
-    system $cmd;
+    #$cmd = "rm -rf $jail";
+    #debug($cmd);
+    #system $cmd;
 
     return $result;
 }
@@ -151,6 +152,7 @@ sub run_code {
 sub post_result {
     my ($status, $reason, $data) = @_;
     print "posting result:";
+    return unless ref $data eq 'HASH' and $data->{cb_url};
     my $result = {
         status  => $status,
         reason  => $reason,
