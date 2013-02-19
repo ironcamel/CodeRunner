@@ -70,69 +70,13 @@ sub validate {
 sub run_code {
     my ($lang, $code, $file_name, $input) = @_;
 
-    debug("Setting up chroot ...");
-    my $jail = '/var/chroot1';
-    my $cmd = "rm -rf $jail";
-    debug($cmd);
-    system $cmd;
-
-    $cmd = "tar -xf $jail.tar -C /var";
-    debug($cmd);
-    die "Could not build chroot jail: $!" unless system($cmd) == 0;
-
-    chdir $jail or die "Failed to chdir into $jail: $!";
-
     my $pid = open my $child_process, '-|';
     if (!$pid) { # child process starts here
-
-        debug("chroot $jail");
-        chroot $jail or die "could not chroot: $!";
-
-        # drop root privileges
-        my $new_uid = getpwnam('coderunner');
-        unless (defined $new_uid) {
-            say "Can't find uid for 'coderunner'";
-            exit 1;
-        }
-        $< = $> = $new_uid;
-        setgid($new_uid);
-
-        my ($out, $err, @cmd) = ('', '');
-        my $tmpdir = File::Temp->newdir();
-        my $tmpfile = File::Temp->new();
-        given ($lang) {
-            when ('java') {
-                my $class_name = (split /\./, $file_name)[0];
-                my $path = "$tmpdir/$file_name";
-                open my $java_file, '>', $path;
-                print $java_file $code;
-                run([ 'javac', "$path" ]) or die "Failed to compile java code";
-                @cmd = ($lang, -classpath => "$tmpdir", $class_name);
-            }
-            when ('c++') {
-                my $path = "$tmpdir/foo.cpp";
-                open my $c_file, '>', $path;
-                print $c_file $code;
-                run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
-                    or die "Failed to compile c/c++ code";
-                @cmd = ("$tmpdir/foo");
-            }
-            when ([qw(perl python java)]) {
-                print $tmpfile $code;
-                @cmd =($lang, "$tmpfile");
-            }
-            default {
-                die "Language [$lang] is not supported yet\n";
-            }
-        }
-
-        debug("going to run: @cmd");
         try {
-            run(\@cmd, \$input, \$out, \$err, timeout(3));
+            run_in_chroot($lang, $code, $file_name, $input);
         } catch {
-            print "Took too long\n";
+            say "ERROR: $_";
         };
-        print $out;
         exit;
     } # end of child process
 
@@ -148,6 +92,71 @@ sub run_code {
     #system $cmd;
 
     return $result;
+}
+
+sub run_in_chroot {
+    my ($lang, $code, $file_name, $input) = @_;
+
+    debug("Setting up chroot ...");
+    my $jail = '/var/chroot1';
+    my $cmd = "rm -rf $jail";
+    debug($cmd);
+    system $cmd;
+
+    $cmd = "tar -xf $jail.tar -C /var";
+    debug($cmd);
+    die "Could not build chroot jail: $!" unless system($cmd) == 0;
+
+    chdir $jail or die "Failed to chdir into $jail: $!";
+
+    debug("chroot $jail");
+    chroot $jail or die "could not chroot: $!";
+
+    # drop root privileges
+    my $new_uid = getpwnam('coderunner');
+    unless (defined $new_uid) {
+        say "Can't find uid for 'coderunner'";
+        exit 1;
+    }
+    $< = $> = $new_uid;
+    setgid($new_uid);
+
+    my ($out, $err, @cmd) = ('', '');
+    my $tmpdir = File::Temp->newdir();
+    my $tmpfile = File::Temp->new();
+    given ($lang) {
+        when ('java') {
+            my $class_name = (split /\./, $file_name)[0];
+            my $path = "$tmpdir/$file_name";
+            open my $java_file, '>', $path;
+            print $java_file $code;
+            run([ 'javac', "$path" ]) or die "Failed to compile java code";
+            @cmd = ($lang, -classpath => "$tmpdir", $class_name);
+        }
+        when ('c++') {
+            my $path = "$tmpdir/foo.cpp";
+            open my $c_file, '>', $path;
+            print $c_file $code;
+            run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
+                or die "Failed to compile c/c++ code";
+            @cmd = ("$tmpdir/foo");
+        }
+        when ([qw(perl python java)]) {
+            print $tmpfile $code;
+            @cmd =($lang, "$tmpfile");
+        }
+        default {
+            die "Language [$lang] is not supported yet\n";
+        }
+    }
+
+    debug("going to run: @cmd");
+    try {
+        run(\@cmd, \$input, \$out, \$err, timeout(3));
+    } catch {
+        print "Took too long\n";
+    };
+    print $out;
 }
 
 sub post_result {
