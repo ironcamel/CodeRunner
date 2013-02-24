@@ -16,7 +16,7 @@ use YAML qw(LoadFile);
 
 my $CONFIG = LoadFile("$RealBin/../config.yml");
 my $AGENT = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
-my $log_path = "/tmp/coderunner-worker.log";
+my $log_path = "/tmp/worker.log";
 my $LOG = IO::File->new($log_path, 'a')
     or die "Could not open $log_path : $!\n";
 $LOG->autoflush(1);
@@ -63,6 +63,7 @@ sub process_msg {
     my ($data) = @_;
     log_msg($data);
     my $out = run_code($data);
+    return post_result(-1, $out, $data) if $out =~ /^ERROR:/;
     my $status = $out eq $data->{problem}{output} ? 1 : 0;
     my $reason = $status == 1 ? 'Success' : 'Wrong answer';
     post_result($status, $reason, $data);
@@ -89,9 +90,7 @@ sub run_code {
     debug("full: $result");
 
     # Lets clean up after ourselves.
-    #$cmd = "rm -rf $jail";
-    #debug($cmd);
-    #system $cmd;
+    #sys("rm -rf $jail");
 
     return $result;
 }
@@ -106,69 +105,69 @@ sub run_in_chroot {
 
     debug("Setting up chroot ...");
     my $jail = '/var/chroot1';
-    #$jail = '/var/chroot-arch';
-    my $cmd = "rm -rf $jail";
-    #debug($cmd);
-    #system $cmd;
-
-    $cmd = "tar -xf $jail.tar -C /var";
-    #debug($cmd);
-    #die "Could not build chroot jail: $!" unless system($cmd) == 0;
+    #sys("rm -rf $jail");
+    #sys("tar -xf $jail.tar -C /var") or die "Could not build chroot jail: $!";
 
     chdir $jail or die "Failed to chdir into $jail: $!";
 
-    $cmd = "mount -t proc proc proc/";
-    #debug($cmd);
-    #die "Could not mount /proc: $!" unless system($cmd) == 0;
+    if (not glob "$jail/proc/*") {
+        sys("mount -t proc proc proc/") or die "Could not mount /proc: $!";
+    }
+
+    my $run_dir = "/home/sandbox/runs";
+    my $chroot_run_dir = $jail . $run_dir;
+    if (not -d $chroot_run_dir) {
+        mkdir $chroot_run_dir or die "Could not mkdir $chroot_run_dir: $!";
+        chmod 0777, $chroot_run_dir or die "Could not chmod $chroot_run_dir";
+    }
+    if (my $url = $data->{env_bundle_url}) {
+        debug("getting bundle from $url");
+        my $bundle_path = "$chroot_run_dir/bundle.tar";
+        # For https: LWP::Protocol::https, libssl-dev, libnet-ssleay-perl 
+        my $res = $AGENT->mirror($url, $bundle_path);
+        debug($res->status_line);
+        if (!$res->is_success and $res->code != 304) {
+            die "Could not download bundle: " . $res->status_line;
+        }
+        sys("tar xf $bundle_path -C $chroot_run_dir")
+            or die "Could not expand bundle $bundle_path $!";
+    }
 
     debug("chroot $jail");
-    chroot $jail or die "could not chroot: $!";
+    chroot $jail or die "Could not chroot: $!";
 
-    # drop root privileges
-    my $new_uid = getpwnam('coderunner');
-    die "Can't find uid for 'coderunner'" unless defined $new_uid;
+    # Drop root privileges immediately after successful chroot
+    my $new_uid = getpwnam('sandbox');
+    die "Can't find uid for sandbox user" unless defined $new_uid;
     $< = $> = $new_uid; # Update the real and effective user id
     setgid($new_uid);   # Update the group id
 
+    debug("chdir $run_dir");
+    chdir $run_dir or die "Could not chdir to $run_dir: $!";
+
     my ($out, $err, @cmd) = ('', '');
-    my $tmpdir = File::Temp->newdir();
-    my $tmpfile = File::Temp->new();
     given ($lang) {
         when ('java') {
-            chdir "$tmpdir";
-            if (my $url = $data->{env_bundle_url}) {
-                #$url = 'http://ironcamel.com/files/penny.tar';
-                debug("getting bundle from $url");
-                my $bundle_path = "bundle.tar";
-                # TODO: install LWP::Protocol::https, libssl-dev,
-                # libnet-ssleay-perl in chroot
-                my $res = $AGENT->mirror($url, $bundle_path);
-                debug($res->status_line);
-                die $res->status_line unless $res->is_success;
-                run ["tar xf $bundle_path"] == 0
-                    or die "Could not expand bundle $bundle_path $!";
-            }
             my $class_name = (split /\./, $file_name)[0];
-            my $path = "$tmpdir/$file_name";
+            my $path = $file_name;
             open my $java_file, '>', $path;
             print $java_file $code;
             my $compile_cmd = $data->{compile_cmd} || "javac $path";
-            system($compile_cmd) == 0 or
-                die "Failed to compile java code via [$compile_cmd]: $!";
-            #@cmd = ($lang, -classpath => "$tmpdir", $class_name);
+            sys($compile_cmd) or die "Failed to compile java code: $!";
             @cmd = ($lang, $class_name);
         }
         when ('c++') {
-            my $path = "$tmpdir/foo.cpp";
-            open my $c_file, '>', $path;
+            my $path = 'foo.cpp';
+            open my $c_file, '>', $path or die "Could not create c file: $!";
             print $c_file $code;
-            run([ 'g++', '-o' => "$tmpdir/foo", "$path" ])
-                or die "Failed to compile c/c++ code";
-            @cmd = ("$tmpdir/foo");
+            sys("g++ -o foo $path") or die "Failed to compile c code: $!";
+            @cmd = ('./foo');
         }
         when ([qw(perl python ruby)]) {
-            print $tmpfile $code;
-            @cmd =($lang, "$tmpfile");
+            my $path = 'foo';
+            open my $p_file, '>', $path;
+            print $p_file $code;
+            @cmd =($lang, $path);
         }
         default {
             die "Language [$lang] is not supported yet\n";
@@ -181,7 +180,6 @@ sub run_in_chroot {
     } catch {
         print "Took too long $_\n";
     };
-    chdir '/'; # Leave the temp dir so it can be auto deleted
     print $out;
 }
 
@@ -214,4 +212,10 @@ sub log_msg {
     my %copy = %$data;
     $copy{problem} = $copy{problem}{title};
     debug(\%copy)
+}
+
+sub sys {
+    my ($cmd) = @_;
+    debug($cmd);
+    return system($cmd) == 0;
 }
